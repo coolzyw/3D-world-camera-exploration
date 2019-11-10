@@ -56,6 +56,9 @@ var FSHADER_SOURCE =
 	'  gl_FragColor = v_Color;\n' +
 	'}\n';
 
+// --------------------- Eye positions -----------------------------------
+var g_EyeX = 5.0, g_EyeY = 5.0, g_EyeZ = 3.0; // Eye position
+
 // --------------------- Global Variables----------------------------------
 var canvas;		// main() sets this to the HTML-5 'canvas' element used for WebGL.
 var gl;				// main() sets this to the rendering context for WebGL. This object
@@ -196,20 +199,35 @@ function main() {
 	}
 	// Create a local version of our model matrix in JavaScript
 	var modelMatrix = new Matrix4();
+	var viewMatrix = new Matrix4();
+
+
+	// store the view matrix and projection matrix
+	var u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
+	var u_ProjMatrix = gl.getUniformLocation(gl.program, 'u_ProjMatrix');
 
 	// Create, init current rotation angle value in JavaScript
 	var currentAngle = 0.0;
 	var currentAnglePivot = 80;
+
+	document.onkeydown = function(ev){ keydown(ev, gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix); };
+
+	// Create the matrix to specify the viewing volume and pass it to u_ProjMatrix
+	var projMatrix = new Matrix4();
+	projMatrix.setOrtho(-1.0, 1.0, -1.0, 1.0, 0.0, 2.0);
+	gl.uniformMatrix4fv(u_ProjMatrix, false, projMatrix.elements);
+
+	drawTop(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);   // Draw shapes
 
 //-----------------
 
 	// Start drawing: create 'tick' variable whose value is this function:
 	var tick = function() {
 		currentAngle = animate(currentAngle);  // Update the rotation angle
-		animate2();
-		animate3();
-		animate4();
-		drawTop(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
+		// animate2();
+		// animate3();
+		// animate4();
+		drawTop(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);   // Draw shapes
 		// drawRobot(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
 		// report current angle on console
 		//console.log('currentAngle=',currentAngle);
@@ -1253,17 +1271,20 @@ function makeGroundGrid() {
 	}
 }
 
-function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix) {
+function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
 //==============================================================================
 	// Clear <canvas>  colors AND the depth buffer
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+	// Pass the view projection matrix
+	gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
 
 	modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
 	modelMatrix.perspective(42.0,   // FOVY: top-to-bottom vertical image angle, in degrees
 		1.0,   // Image Aspect Ratio: camera lens width/height
 		1.0,   // camera z-near distance (always positive; frustum begins at z = -znear)
 		1000.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
-	modelMatrix.lookAt( 5.0,  5.0,  3.0,      // center of projection
+	modelMatrix.lookAt(g_EyeX, g_EyeY, g_EyeZ,     // center of projection
 		-1.0, -2.0, -0.5,      // look-at point
 		0.0,  0.0,  1.0);     // 'up' vector
 
@@ -1271,7 +1292,7 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 	// save the previous modelMatrix
 	pushMatrix(modelMatrix);
 
-	modelMatrix.translate(move_x - 0.4, move_y - 0.2, 0.0);  // 'set' means DISCARD old matrix,
+	modelMatrix.translate(move_x - 0.4, move_y - 0.2, 0.4);  // 'set' means DISCARD old matrix,
 	// (drawing axes centered in CVV), and then make new
 	// drawing axes moved to the lower-left corner of CVV.
 	modelMatrix.scale(0.15, 0.15, 0.15);
@@ -1994,8 +2015,20 @@ function myKeyDown(kev) {
 	}
 }
 
+function keydown(ev, gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
+	if(ev.keyCode == 39) { // The right arrow key was pressed
+		g_EyeX += 0.1;
+	} else
+	if (ev.keyCode == 37) { // The left arrow key was pressed
+		g_EyeX -= 0.1;
+	} else { return; } // Prevent the unnecessary drawing
+	drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
+}
+
 function myKeyUp(kev) {
 //===============================================================================
 // Called when user releases ANY key on the keyboard; captures scancodes well
 	console.log('myKeyUp()--keyCode='+kev.keyCode+' released.');
 }
+
+
