@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Degenerate Rot Matrix!</title>
+  </head>
+
+  <body onload="main()">
+    <canvas id="webgl" width="400" height="400">
+    Please use a browser that supports "canvas"
+    </canvas>
+
+	<p>
+  Please open the 'console'  (right-click-->Inspect-->console tab) <br>
+  to see printed matrix results.
+  </p>
+    <script src="../lib/webgl-utils.js"></script>
+    <script src="../lib/webgl-debug.js"></script>
+    <script src="../lib/cuon-utils.js"></script>
+
+<! =========================================================================
+ Monday 2016.01.11  -- In-class activity
+============================================================================
+1)  Look in StarterCode_SecondDay.zip, in the 'lib' directory.  There you'll
+find the library file 'cuon-matrix-quat.js', an extended version of the book's 
+rudimentary vector/matrix library ('cuon-matrix.js').   Add a line of text
+here to use that library in this simple program:
+
+>
+    <script src="../lib/cuon-matrix-quat03.js"></script>
+
+<! 
+2) Explore the 'cuon-matrix-quat.js' library.  
+In it you'll find objects 'Vector3', 'Vector4' and 'Matrix4',
+which each have member functions to help you manipulate 
+3x1 vectors, 4x1 vectors and 4x4 matrices useful for computer graphics work,
+as well as a 'quaternion' object we will use later for rotations.
+
+3) Search this file for the string 'console', and you'll find that the 'Matrix4'
+object has a 'printMe()' member function.  Try it!  
+     ?HOW? at the bottom of main(), create a new 'Matrix4' object, and use one of its 
+'setXXX()' member functions to initialize the matrix to some desirable set of
+values.  Can you create and print an identity matrix?  A 'translate' matrix?
+A 'scale' matrix?.
+
+4) Next, see if you can create and print a Vector3 object and a Vector4 object.
+Hmmm.  I don't see any 'printMe()' member functions or equivalent.  However,
+we CAN set individual vector elements using array-like syntax (e.g. aVec[0]=3.0;)
+and we CAN use console.log() calls to print the values of each vector's individual 
+elements. 
+ 		Note how awkwardly I did this in the 2.02.HelloPoint1_MatrixOps.js file-- 
+I assign the vector to 'tmp' so that I can re-use the same console.log() function 
+(cut-and-paste) without modifying it much. 
+Wouldn't it be much nicer, much more professional to add 'printMe()' member function
+to the Vector3 and Vector4 objects defined in our 'cuon-matrix-quat.js' library?
+ for these as well?
+		Try it!  Save a numbered copy of the current version (e.g. cuon-matrix-quat01.js)
+to ensure you can always 'go back' if needed.  Use the existing code to explore how
+to add new member functions to Vector3 and Vector4 objects (unsure? Google can help,
+and/or refer to one of the good JavaScript tutorials mentioned last week).  Start
+simply, add things incrementally, test each addition thoroughly, only make one 
+improvement between each test; be sure one improvement works before you begin the next.
+
+5) Next, try out some basic vector/vector operations.
+--Create two different Vector4 objects with nonzero elements.  Compute and print
+their lengths in the console window. Can any Vector4 member function compute 
+that for you?  Should you add a new member fcn?  Can you normalize these vectors?
+
+--Can you compute a 'dotProduct()' for two Vector4 objects?  Note that some of the
+code within other functions computes dot products.  Wouldn't it be nice to
+have a Vector4 member function to do this?  Try to make one; did it work? test it...
+
+--Can you compute a 'crossProduct()' for two Vector4 objects? Wouldn't it be nice
+to have a Vector4 member function to do this? Try to make one; did it work
+>
+
+    <script src="HelloMatrixDegen.js"></script>
+  </body>
+</html>
