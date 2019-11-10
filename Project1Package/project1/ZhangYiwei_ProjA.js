@@ -210,7 +210,7 @@ function main() {
 		animate3();
 		animate4();
 		drawTop(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
-		drawRobot(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
+		// drawRobot(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
 		// report current angle on console
 		//console.log('currentAngle=',currentAngle);
 		document.getElementById('current-angle-top').innerHTML=
@@ -1258,8 +1258,20 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 	// Clear <canvas>  colors AND the depth buffer
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+	modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
+	modelMatrix.perspective(42.0,   // FOVY: top-to-bottom vertical image angle, in degrees
+		1.0,   // Image Aspect Ratio: camera lens width/height
+		1.0,   // camera z-near distance (always positive; frustum begins at z = -znear)
+		1000.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
+	modelMatrix.lookAt( 5.0,  5.0,  3.0,      // center of projection
+		-1.0, -2.0, -0.5,      // look-at point
+		0.0,  0.0,  1.0);     // 'up' vector
+
 	//-------Draw Spinning Cylinder:
-	modelMatrix.setTranslate(move_x - 0.4, move_y - 0.2, 0.0);  // 'set' means DISCARD old matrix,
+	// save the previous modelMatrix
+	pushMatrix(modelMatrix);
+
+	modelMatrix.translate(move_x - 0.4, move_y - 0.2, 0.0);  // 'set' means DISCARD old matrix,
 	// (drawing axes centered in CVV), and then make new
 	// drawing axes moved to the lower-left corner of CVV.
 	modelMatrix.scale(0.15, 0.15, 0.15);
@@ -1274,7 +1286,6 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
 		cylStart/floatsPerVertex, // start at this vertex number, and
 		cylVerts.length/floatsPerVertex);	// draw this many vertices.
-	pushMatrix(modelMatrix);
 	pushMatrix(modelMatrix); // spinning sphere top1
 	pushMatrix(modelMatrix); // spinning sphere top2
 	pushMatrix(modelMatrix); // spinning sphere side
@@ -1284,6 +1295,7 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 	pushMatrix(modelMatrix); // spinning sphere top2
 	pushMatrix(modelMatrix); // spinning sphere side
 	pushMatrix(modelMatrix); // pivot
+
 
 	// ------------------- draw the top spinning sphere
 	modelMatrix = popMatrix();
@@ -1464,6 +1476,19 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
 		sphStart8/floatsPerVertex,	// start at this vertex number, and
 		sphVerts.length/floatsPerVertex);	// draw this many vertices.
+
+	// ---------Draw Ground Plane, without spinning --------------------------
+	// position it.
+	modelMatrix = popMatrix();
+	modelMatrix.translate( 0.4, -0.4, 0.0);
+	modelMatrix.scale(0.1, 0.1, 0.1);				// shrink by 10X:
+	// Drawing:
+	// Pass our current matrix to the vertex shaders:
+	// Draw just the ground-plane's vertices
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	gl.drawArrays(gl.LINES, 								// use this drawing primitive, and
+		gndStart/floatsPerVertex,	// start at this vertex number, and
+		gndVerts.length/floatsPerVertex);	// draw this many vertices.
 }
 
 function drawRobot(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix) {
@@ -1571,18 +1596,6 @@ function drawRobot(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelM
 	// Draw just the first set of vertices: start at vertex SHAPE_0_SIZE
 	gl.drawArrays(gl.TRIANGLES, legStart/floatsPerVertex, legVerts.length/floatsPerVertex);
 
-
-	// ---------Draw Ground Plane, without spinning --------------------------
-	// position it.
-	modelMatrix.setTranslate( 0.4, -0.4, 0.0);
-	modelMatrix.scale(0.1, 0.1, 0.1);				// shrink by 10X:
-	// Drawing:
-	// Pass our current matrix to the vertex shaders:
-	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-	// Draw just the ground-plane's vertices
-	gl.drawArrays(gl.LINES, 								// use this drawing primitive, and
-		gndStart/floatsPerVertex,	// start at this vertex number, and
-		gndVerts.length/floatsPerVertex);	// draw this many vertices.
 }
 
 
