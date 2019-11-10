@@ -41,52 +41,23 @@ var FSHADER_SOURCE =
   '  gl_FragColor = v_Color;\n' +
   '}\n';
 
-// Global Variables
-// =========================
-// Use globals to avoid needlessly complex & tiresome function argument lists,
-// and for user-adjustable controls.
-// For example, the WebGL rendering context 'gl' gets used in almost every fcn;
-// requiring 'gl' as an argument won't give us any added 'encapsulation'; make
-// it global.  Later, if the # of global vars grows too large, we can put them 
-// into one (or just a few) sensible global objects for better modularity.
-//------------For WebGL-----------------------------------------------
-var gl;           // webGL Rendering Context. Set in main(), used everywhere.
-var g_canvas = document.getElementById('webgl');     
-                  // our HTML-5 canvas object that uses 'gl' for drawing.
-                  
-// ----------For tetrahedron & its matrix---------------------------------
-var g_vertsMax = 0;                 // number of vertices held in the VBO 
-                                    // (global: replaces local 'n' variable)
-var g_modelMatrix = new Matrix4();  // Construct 4x4 matrix; contents get sent
-                                    // to the GPU/Shaders as a 'uniform' var.
-var g_modelMatLoc;                  // that uniform's location in the GPU
+// Global Variables for the spinning tetrahedron:
+var ANGLE_STEP = 45.0;  // default rotation angle rate (deg/sec)
 
-//------------For Animation---------------------------------------------
-var g_isRun = true;                 // run/stop for animation; used in tick().
-var g_lastMS = Date.now();    			// Timestamp for most-recently-drawn image; 
-                                    // in milliseconds; used by 'animate()' fcn 
-                                    // (now called 'timerAll()' ) to find time
-                                    // elapsed since last on-screen image.
-var g_angle01 = 0;                  // initial rotation angle
-var g_angle01Rate = 45.0;           // rotation speed, in degrees/second 
-
-//------------For mouse click-and-drag: -------------------------------
-var g_isDrag=false;		// mouse-drag: true when user holds down mouse button
-var g_xMclik=0.0;			// last mouse button-down position (in CVV coords)
-var g_yMclik=0.0;   
-var g_xMdragTot=0.0;	// total (accumulated) mouse-drag amounts (in CVV coords).
-var g_yMdragTot=0.0;  
+// Global vars for mouse click-and-drag for rotation.
+var isDrag=false;		// mouse-drag: true when user holds down mouse button
+var xMclik=0.0;			// last mouse button-down position (in CVV coords)
+var yMclik=0.0;   
+var xMdragTot=0.0;	// total (accumulated) mouse-drag amounts (in CVV coords).
+var yMdragTot=0.0;  
 
 function main() {
 //==============================================================================
-/*REPLACED THIS: 
-// Retrieve <canvas> element:
- var canvas = document.getElementById('webgl'); 
-//with global variable 'g_canvas' declared & set above.
-*/
-  
-  // Get gl, the rendering context for WebGL, from our 'g_canvas' object
-  gl = getWebGLContext(g_canvas);
+  // Retrieve <canvas> element
+  var canvas = document.getElementById('webgl');
+
+  // Get the rendering context for WebGL
+  var gl = getWebGLContext(canvas);
   if (!gl) {
     console.log('Failed to get the rendering context for WebGL');
     return;
@@ -99,62 +70,46 @@ function main() {
   }
 
   // Initialize a Vertex Buffer in the graphics system to hold our vertices
-  g_maxVerts = initVertexBuffer(gl);  
-  if (g_maxVerts < 0) {
+  var n = initVertexBuffer(gl);
+  if (n < 0) {
     console.log('Failed to set the vertex information');
     return;
   }
 
-	// Register the Keyboard & Mouse Event-handlers------------------------------
-	// When users move, click or drag the mouse and when they press a key on the 
-	// keyboard the operating system create a simple text-based 'event' message.
-	// Your Javascript program can respond to 'events' if you:
-	// a) tell JavaScript to 'listen' for each event that should trigger an
-	//   action within your program: call the 'addEventListener()' function, and 
-	// b) write your own 'event-handler' function for each of the user-triggered 
-	//    actions; Javascript's 'event-listener' will call your 'event-handler'
-	//		function each time it 'hears' the triggering event from users.
+	// Register the Mouse & Keyboard Event-handlers-------------------------------
+	// If users move, click or drag the mouse, or they press any keys on the 
+	// the operating system will sense them immediately as 'events'.  
+	// If you would like your program to respond to any of these events, you must // tell JavaScript exactly how to do it: you must write your own 'event 
+	// handler' functions, and then 'register' them; tell JavaScript WHICH 
+	// events should cause it to call WHICH of your event-handler functions.
 	//
-  // KEYBOARD:
-  // The 'keyDown' and 'keyUp' events respond to ALL keys on the keyboard,
-  //      including shift,alt,ctrl,arrow, pgUp, pgDn,f1,f2...f12 etc. 
+	// First, register all mouse events found within our HTML-5 canvas:
+  canvas.onmousedown	=	function(ev){myMouseDown( ev, gl, canvas) }; 
+  
+  					// when user's mouse button goes down call mouseDown() function
+  canvas.onmousemove = 	function(ev){myMouseMove( ev, gl, canvas) };
+  
+											// call mouseMove() function					
+  canvas.onmouseup = 		function(ev){myMouseUp(   ev, gl, canvas)};
+  					// NOTE! 'onclick' event is SAME as on 'mouseup' event
+  					// in Chrome Brower on MS Windows 7, and possibly other 
+  					// operating systems; use 'mouseup' instead.
+  					
+  // Next, register all keyboard events found within our HTML webpage window:
 	window.addEventListener("keydown", myKeyDown, false);
-	// After each 'keydown' event, call the 'myKeyDown()' function.  The 'false' 
-	// arg (default) ensures myKeyDown() call in 'bubbling', not 'capture' stage)
-	// ( https://www.w3schools.com/jsref/met_document_addeventlistener.asp )
 	window.addEventListener("keyup", myKeyUp, false);
-	// Called when user RELEASES the key.  Now rarely used...
+	window.addEventListener("keypress", myKeyPress, false);
+  // The 'keyDown' and 'keyUp' events respond to ALL keys on the keyboard,
+  // 			including shift,alt,ctrl,arrow, pgUp, pgDn,f1,f2...f12 etc. 
+  //			I find these most useful for arrow keys; insert/delete; home/end, etc.
+  // The 'keyPress' events respond only to alpha-numeric keys, and sense any 
+  //  		modifiers such as shift, alt, or ctrl.  I find these most useful for
+  //			single-number and single-letter inputs that include SHIFT,CTRL,ALT.
 
-	// MOUSE:
-	// Create 'event listeners' for a few vital mouse events 
-	// (others events are available too... google it!).  
-	window.addEventListener("mousedown", myMouseDown); 
-	// (After each 'mousedown' event, browser calls the myMouseDown() fcn.)
-  window.addEventListener("mousemove", myMouseMove); 
-	window.addEventListener("mouseup", myMouseUp);	
-	window.addEventListener("click", myMouseClick);				
-	window.addEventListener("dblclick", myMouseDblClick); 
-	// Note that these 'event listeners' will respond to mouse click/drag 
-	// ANYWHERE, as long as you begin in the browser window 'client area'.  
-	// You can also make 'event listeners' that respond ONLY within an HTML-5 
-	// element or division. For example, to 'listen' for 'mouse click' only
-	// within the HTML-5 canvas where we draw our WebGL results, try:
-	// g_canvasID.addEventListener("click", myCanvasClick);
-  //
-	// Wait wait wait -- these 'mouse listeners' just NAME the function called 
-	// when the event occurs!   How do the functions get data about the event?
-	//  ANSWER1:----- Look it up:
-	//    All mouse-event handlers receive one unified 'mouse event' object:
-	//	  https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent
-	//  ANSWER2:----- Investigate:
-	// 		All Javascript functions have a built-in local variable/object named 
-	//    'argument'.  It holds an array of all values (if any) found in within
-	//	   the parintheses used in the function call.
-  //     DETAILS:  https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Functions/arguments
-	// END Keyboard & Mouse Event-Handlers---------------------------------------
+	// END Mouse & Keyboard Event-Handlers-----------------------------------
 	
   // Specify the color for clearing <canvas>
-  gl.clearColor(0.3, 0.3, 0.3, 1.0);
+  gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
 	// NEW!! Enable 3D depth-test when drawing: don't over-draw at any pixel 
 	// unless the new Z value is closer to the eye than the old one..
@@ -162,26 +117,23 @@ function main() {
 	gl.enable(gl.DEPTH_TEST); 	  
 	
   // Get handle to graphics system's storage location of u_ModelMatrix
-  g_modelMatLoc = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
-  if (!g_modelMatLoc) { 
+  var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
+  if (!u_ModelMatrix) { 
     console.log('Failed to get the storage location of u_ModelMatrix');
     return;
   }
-/* REPLACED by global var 'g_ModelMatrix' (declared, constructed at top)
   // Create a local version of our model matrix in JavaScript 
   var modelMatrix = new Matrix4();
-*/
-/* REPLACED by global g_angle01 variable (declared at top)
+  
   // Create, init current rotation angle value in JavaScript
   var currentAngle = 0.0;
-*/
 
   // ANIMATION: create 'tick' variable whose value is this function:
   //----------------- 
   var tick = function() {
-    g_angle01 = animate(g_angle01);  // Update the rotation angle
-    drawAll();   // Draw all parts
-//    console.log('g_angle01=',g_angle01.toFixed(5)); // put text in console.
+    currentAngle = animate(currentAngle);  // Update the rotation angle
+    draw(gl, n, currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
+//    console.log('currentAngle=',currentAngle); // put text in console.
 
 //	Show some always-changing text in the webpage :  
 //		--find the HTML element called 'CurAngleDisplay' in our HTML page,
@@ -190,13 +142,12 @@ function main() {
 //				on-screen text that reports our current angle value:
 //		--HINT: don't confuse 'getElementByID() and 'getElementById()
 		document.getElementById('CurAngleDisplay').innerHTML= 
-			'g_angle01= '+g_angle01.toFixed(5);
+			'CurrentAngle= '+currentAngle;
 		// Also display our current mouse-dragging state:
 		document.getElementById('Mouse').innerHTML=
-			'Mouse Drag totals (CVV coords):\t'+
-			g_xMdragTot.toFixed(5)+', \t'+g_yMdragTot.toFixed(5);	
+			'Mouse Drag totals (CVV coords):\t'+xMdragTot+', \t'+yMdragTot;	
 		//--------------------------------
-    requestAnimationFrame(tick, g_canvas);   
+    requestAnimationFrame(tick, canvas);   
     									// Request that the browser re-draw the webpage
     									// (causes webpage to endlessly re-draw itself)
   };
@@ -204,10 +155,8 @@ function main() {
 	
 }
 
-function initVertexBuffer() {
+function initVertexBuffer(gl) {
 //==============================================================================
-// NOTE!  'gl' is now a global variable -- no longer needed as fcn argument!
-
 	var c30 = Math.sqrt(0.75);					// == cos(30deg) == sqrt(3) / 2
 	var sq2	= Math.sqrt(2.0);						 
 
@@ -221,11 +170,11 @@ function initVertexBuffer() {
     -c30, -0.5, 0.0, 1.0, 		0.0,  1.0,  0.0, 	// Node 3 (base:lower lft; blue)
 
 */
-			// Face 0: (left side)  
+			// Face 0: (right side)  
      0.0,	 0.0, sq2, 1.0,			1.0, 	1.0,	1.0,	// Node 0
      c30, -0.5, 0.0, 1.0, 		0.0,  0.0,  1.0, 	// Node 1
      0.0,  1.0, 0.0, 1.0,  		1.0,  0.0,  0.0,	// Node 2
-			// Face 1: (right side)
+			// Face 1: (left side)
 		 0.0,	 0.0, sq2, 1.0,			1.0, 	1.0,	1.0,	// Node 0
      0.0,  1.0, 0.0, 1.0,  		1.0,  0.0,  0.0,	// Node 2
     -c30, -0.5, 0.0, 1.0, 		0.0,  1.0,  0.0, 	// Node 3
@@ -238,7 +187,7 @@ function initVertexBuffer() {
      0.0,  1.0,  0.0, 1.0,  	1.0,  0.0,  0.0,	// Node 2
      c30, -0.5,  0.0, 1.0, 		0.0,  0.0,  1.0, 	// Node 1
   ]);
-  g_vertsMax = 12;		// 12 tetrahedron vertices.
+  var nn = 12;		// 12 tetrahedron vertices.
   								// we can also draw any subset of these we wish,
   								// such as the last 3 vertices.(onscreen at upper right)
 	
@@ -300,12 +249,10 @@ function initVertexBuffer() {
   // Unbind the buffer object 
   gl.bindBuffer(gl.ARRAY_BUFFER, null);
 
-/* REMOVED -- global 'g_vertsMax' means we don't need it anymore
   return nn;
-*/
 }
 
-function drawAll() {
+function draw(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 //==============================================================================
   // Clear <canvas>  colors AND the depth buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -323,37 +270,37 @@ function drawAll() {
 	// console.log("clear value:", clrColr);
 	
   //-------Draw Spinning Tetrahedron
-  g_modelMatrix.setTranslate(-0.4,-0.4, 0.0);  // 'set' means DISCARD old matrix,
+  modelMatrix.setTranslate(-0.4,-0.4, 0.0);  // 'set' means DISCARD old matrix,
   						// (drawing axes centered in CVV), and then make new
   						// drawing axes moved to the lower-left corner of CVV. 
-  g_modelMatrix.scale(1,1,-1);							// convert to left-handed coord sys
+  modelMatrix.scale(1,1,-1);							// convert to left-handed coord sys
   																				// to match WebGL display canvas.
-  g_modelMatrix.scale(0.5, 0.5, 0.5);
+  modelMatrix.scale(0.5, 0.5, 0.5);
   						// if you DON'T scale, tetra goes outside the CVV; clipped!
-  g_modelMatrix.rotate(g_angle01, 0, 1, 0);  // Make new drawing axes that
+  modelMatrix.rotate(currentAngle, 0, 1, 0);  // Make new drawing axes that
 
   // DRAW TETRA:  Use this matrix to transform & draw 
   //						the first set of vertices stored in our VBO:
   		// Pass our current matrix to the vertex shaders:
-  gl.uniformMatrix4fv(g_modelMatLoc, false, g_modelMatrix.elements);
+  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
   		// Draw triangles: start at vertex 0 and draw 12 vertices
   gl.drawArrays(gl.TRIANGLES, 0, 12);
 
   // NEXT, create different drawing axes, and...
-  g_modelMatrix.setTranslate(0.4, 0.4, 0.0);  // 'set' means DISCARD old matrix,
+  modelMatrix.setTranslate(0.4, 0.4, 0.0);  // 'set' means DISCARD old matrix,
   						// (drawing axes centered in CVV), and then make new
   						// drawing axes moved to the lower-left corner of CVV.
-  g_modelMatrix.scale(1,1,-1);							// convert to left-handed coord sys
+  modelMatrix.scale(1,1,-1);							// convert to left-handed coord sys
   																				// to match WebGL display canvas.
-  g_modelMatrix.scale(0.3, 0.3, 0.3);				// Make it smaller.
+  modelMatrix.scale(0.3, 0.3, 0.3);				// Make it smaller.
   
   // Mouse-Dragging for Rotation:
 	//-----------------------------
 	// Attempt 1:  X-axis, then Y-axis rotation:
 /*  						// First, rotate around x-axis by the amount of -y-axis dragging:
-  g_modelMatrix.rotate(-g_yMdragTot*120.0, 1, 0, 0); // drag +/-1 to spin -/+120 deg.
+  modelMatrix.rotate(-yMdragTot*120.0, 1, 0, 0); // drag +/-1 to spin -/+120 deg.
   						// Then rotate around y-axis by the amount of x-axis dragging
-	g_modelMatrix.rotate( g_xMdragTot*120.0, 0, 1, 0); // drag +/-1 to spin +/-120 deg.
+	modelMatrix.rotate( xMdragTot*120.0, 0, 1, 0); // drag +/-1 to spin +/-120 deg.
 				// Acts SENSIBLY if I always drag mouse to turn on Y axis, then X axis.
 				// Acts WEIRDLY if I drag mouse to turn on X axis first, then Y axis.
 				// ? Why is is 'backwards'? Duality again!
@@ -362,10 +309,10 @@ function drawAll() {
 
 	// Attempt 2: perp-axis rotation:
 							// rotate on axis perpendicular to the mouse-drag direction:
-	var dist = Math.sqrt(g_xMdragTot*g_xMdragTot + g_yMdragTot*g_yMdragTot);
+	var dist = Math.sqrt(xMdragTot*xMdragTot + yMdragTot*yMdragTot);
 							// why add 0.001? avoids divide-by-zero in next statement
 							// in cases where user didn't drag the mouse.)
-	g_modelMatrix.rotate(dist*120.0, -g_yMdragTot+0.0001, g_xMdragTot+0.0001, 0.0);
+	modelMatrix.rotate(dist*120.0, -yMdragTot+0.0001, xMdragTot+0.0001, 0.0);
 				// Acts weirdly as rotation amounts get far from 0 degrees.
 				// ?why does intuition fail so quickly here?
 
@@ -377,8 +324,8 @@ function drawAll() {
 	//-------------------------------
 	// DRAW 2 TRIANGLES:		Use this matrix to transform & draw
 	//						the different set of vertices stored in our VBO:
-  gl.uniformMatrix4fv(g_modelMatLoc, false, g_modelMatrix.elements);
-  		// Draw only the last 2 triangles: start at vertex 6, draw 6 vertices
+  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+  		// Draw only the last 2 triangle: start at vertex 6, draw 6 vertices
   gl.drawArrays(gl.TRIANGLES, 6,6);
 
 }
@@ -394,11 +341,11 @@ function animate(angle) {
   g_last = now;
   
   // Update the current rotation angle (adjusted by the elapsed time)
-  //  limit the angle to move smoothly between +120 and -85 degrees:
-//  if(angle >  120.0 && g_angle01Rate > 0) g_angle01Rate = -g_angle01Rate;
-//  if(angle <  -85.0 && g_angle01Rate < 0) g_angle01Rate = -g_angle01Rate;
+  //  limit the angle to move smoothly between +20 and -85 degrees:
+//  if(angle >  120.0 && ANGLE_STEP > 0) ANGLE_STEP = -ANGLE_STEP;
+//  if(angle < -120.0 && ANGLE_STEP < 0) ANGLE_STEP = -ANGLE_STEP;
   
-  var newAngle = angle + (g_angle01Rate * elapsed) / 1000.0;
+  var newAngle = angle + (ANGLE_STEP * elapsed) / 1000.0;
   if(newAngle > 180.0) newAngle = newAngle - 360.0;
   if(newAngle <-180.0) newAngle = newAngle + 360.0;
   return newAngle;
@@ -413,46 +360,44 @@ function angleSubmit() {
 //	element you'll find a 'button' element that calls this fcn.
 
 // Read HTML edit-box contents:
-	var UsrTxt = document.getElementById('usrAngle').value;	
+	var UsrTxt=document.getElementById('usrAngle').value;	
 // Display what we read from the edit-box: use it to fill up
-// the HTML 'div' element with id='editBoxOut':
-  document.getElementById('EditBoxOut').innerHTML ='You Typed: '+UsrTxt;
-  console.log('angleSubmit: UsrTxt:', UsrTxt); // print in console, and
-  g_angle01 = parseFloat(UsrTxt);     // convert string to float number 
+// the HTML 'div' element with id='Result':
+  document.getElementById('Result').innerHTML ='You Typed: '+UsrTxt;
 };
 
 function clearDrag() {
 // Called when user presses 'Clear' button in our webpage
-	g_xMdragTot = 0.0;
-	g_yMdragTot = 0.0;
+	xMdragTot = 0.0;
+	yMdragTot = 0.0;
 }
 
 function spinUp() {
 // Called when user presses the 'Spin >>' button on our webpage.
 // ?HOW? Look in the HTML file (e.g. ControlMulti.html) to find
 // the HTML 'button' element with onclick='spinUp()'.
-  g_angle01Rate += 25; 
+  ANGLE_STEP += 25; 
 }
 
 function spinDown() {
 // Called when user presses the 'Spin <<' button
- g_angle01Rate -= 25; 
+ ANGLE_STEP -= 25; 
 }
 
 function runStop() {
 // Called when user presses the 'Run/Stop' button
-  if(g_angle01Rate*g_angle01Rate > 1) {  // if nonzero rate,
-    myTmp = g_angle01Rate;  // store the current rate,
-    g_angle01Rate = 0;      // and set to zero.
+  if(ANGLE_STEP*ANGLE_STEP > 1) {
+    myTmp = ANGLE_STEP;
+    ANGLE_STEP = 0;
   }
-  else {    // but if rate is zero,
-  	g_angle01Rate = myTmp;  // use the stored rate.
+  else {
+  	ANGLE_STEP = myTmp;
   }
 }
 
 //===================Mouse and Keyboard event-handling Callbacks
 
-function myMouseDown(ev) {
+function myMouseDown(ev, gl, canvas) {
 //==============================================================================
 // Called when user PRESSES down any mouse button;
 // 									(Which button?    console.log('ev.button='+ev.button);   )
@@ -462,61 +407,52 @@ function myMouseDown(ev) {
 // Create right-handed 'pixel' coords with origin at WebGL canvas LOWER left;
   var rect = ev.target.getBoundingClientRect();	// get canvas corners in pixels
   var xp = ev.clientX - rect.left;									// x==0 at canvas left edge
-  var yp = g_canvas.height - (ev.clientY - rect.top);	// y==0 at canvas bottom edge
+  var yp = canvas.height - (ev.clientY - rect.top);	// y==0 at canvas bottom edge
 //  console.log('myMouseDown(pixel coords): xp,yp=\t',xp,',\t',yp);
   
 	// Convert to Canonical View Volume (CVV) coordinates too:
-  var x = (xp - g_canvas.width/2)  / 		// move origin to center of canvas and
-  						 (g_canvas.width/2);			// normalize canvas to -1 <= x < +1,
-	var y = (yp - g_canvas.height/2) /		//										 -1 <= y < +1.
-							 (g_canvas.height/2);
+  var x = (xp - canvas.width/2)  / 		// move origin to center of canvas and
+  						 (canvas.width/2);			// normalize canvas to -1 <= x < +1,
+	var y = (yp - canvas.height/2) /		//										 -1 <= y < +1.
+							 (canvas.height/2);
 //	console.log('myMouseDown(CVV coords  ):  x, y=\t',x,',\t',y);
 	
-	g_isDrag = true;											// set our mouse-dragging flag
-	g_xMclik = x;													// record where mouse-dragging began
-	g_yMclik = y;
-	// report on webpage
-	document.getElementById('MouseAtResult').innerHTML = 
-	  'Mouse At: '+x.toFixed(5)+', '+y.toFixed(5);
+	isDrag = true;											// set our mouse-dragging flag
+	xMclik = x;													// record where mouse-dragging began
+	yMclik = y;
 };
 
 
-function myMouseMove(ev) {
+function myMouseMove(ev, gl, canvas) {
 //==============================================================================
 // Called when user MOVES the mouse with a button already pressed down.
 // 									(Which button?   console.log('ev.button='+ev.button);    )
 // 		ev.clientX, ev.clientY == mouse pointer location, but measured in webpage 
 //		pixels: left-handed coords; UPPER left origin; Y increases DOWNWARDS (!)  
 
-	if(g_isDrag==false) return;				// IGNORE all mouse-moves except 'dragging'
+	if(isDrag==false) return;				// IGNORE all mouse-moves except 'dragging'
 
 	// Create right-handed 'pixel' coords with origin at WebGL canvas LOWER left;
   var rect = ev.target.getBoundingClientRect();	// get canvas corners in pixels
   var xp = ev.clientX - rect.left;									// x==0 at canvas left edge
-	var yp = g_canvas.height - (ev.clientY - rect.top);	// y==0 at canvas bottom edge
+	var yp = canvas.height - (ev.clientY - rect.top);	// y==0 at canvas bottom edge
 //  console.log('myMouseMove(pixel coords): xp,yp=\t',xp,',\t',yp);
   
 	// Convert to Canonical View Volume (CVV) coordinates too:
-  var x = (xp - g_canvas.width/2)  / 		// move origin to center of canvas and
-  						 (g_canvas.width/2);			// normalize canvas to -1 <= x < +1,
-	var y = (yp - g_canvas.height/2) /		//										 -1 <= y < +1.
-							 (g_canvas.height/2);
+  var x = (xp - canvas.width/2)  / 		// move origin to center of canvas and
+  						 (canvas.width/2);			// normalize canvas to -1 <= x < +1,
+	var y = (yp - canvas.height/2) /		//										 -1 <= y < +1.
+							 (canvas.height/2);
 //	console.log('myMouseMove(CVV coords  ):  x, y=\t',x,',\t',y);
 
 	// find how far we dragged the mouse:
-	g_xMdragTot += (x - g_xMclik);					// Accumulate change-in-mouse-position,&
-	g_yMdragTot += (y - g_yMclik);
-	// Report new mouse position & how far we moved on webpage:
-	document.getElementById('MouseAtResult').innerHTML = 
-	  'Mouse At: '+x.toFixed(5)+', '+y.toFixed(5);
-	document.getElementById('MouseDragResult').innerHTML = 
-	  'Mouse Drag: '+(x - g_xMclik).toFixed(5)+', '+(y - g_yMclik).toFixed(5);
-
-	g_xMclik = x;													// Make next drag-measurement from here.
-	g_yMclik = y;
+	xMdragTot += (x - xMclik);					// Accumulate change-in-mouse-position,&
+	yMdragTot += (y - yMclik);
+	xMclik = x;													// Make next drag-measurement from here.
+	yMclik = y;
 };
 
-function myMouseUp(ev) {
+function myMouseUp(ev, gl, canvas) {
 //==============================================================================
 // Called when user RELEASES mouse button pressed previously.
 // 									(Which button?   console.log('ev.button='+ev.button);    )
@@ -526,148 +462,85 @@ function myMouseUp(ev) {
 // Create right-handed 'pixel' coords with origin at WebGL canvas LOWER left;
   var rect = ev.target.getBoundingClientRect();	// get canvas corners in pixels
   var xp = ev.clientX - rect.left;									// x==0 at canvas left edge
-	var yp = g_canvas.height - (ev.clientY - rect.top);	// y==0 at canvas bottom edge
+	var yp = canvas.height - (ev.clientY - rect.top);	// y==0 at canvas bottom edge
 //  console.log('myMouseUp  (pixel coords): xp,yp=\t',xp,',\t',yp);
   
 	// Convert to Canonical View Volume (CVV) coordinates too:
-  var x = (xp - g_canvas.width/2)  / 		// move origin to center of canvas and
-  						 (g_canvas.width/2);			// normalize canvas to -1 <= x < +1,
-	var y = (yp - g_canvas.height/2) /		//										 -1 <= y < +1.
-							 (g_canvas.height/2);
+  var x = (xp - canvas.width/2)  / 		// move origin to center of canvas and
+  						 (canvas.width/2);			// normalize canvas to -1 <= x < +1,
+	var y = (yp - canvas.height/2) /		//										 -1 <= y < +1.
+							 (canvas.height/2);
 	console.log('myMouseUp  (CVV coords  ):  x, y=\t',x,',\t',y);
 	
-	g_isDrag = false;											// CLEAR our mouse-dragging flag, and
+	isDrag = false;											// CLEAR our mouse-dragging flag, and
 	// accumulate any final bit of mouse-dragging we did:
-	g_xMdragTot += (x - g_xMclik);
-	g_yMdragTot += (y - g_yMclik);
-	// Report new mouse position:
-	document.getElementById('MouseAtResult').innerHTML = 
-	  'Mouse At: '+x.toFixed(5)+', '+y.toFixed(5);
-	console.log('myMouseUp: g_xMdragTot,g_yMdragTot =',g_xMdragTot,',\t',g_yMdragTot);
+	xMdragTot += (x - xMclik);
+	yMdragTot += (y - yMclik);
+	console.log('myMouseUp: xMdragTot,yMdragTot =',xMdragTot,',\t',yMdragTot);
 };
 
-function myMouseClick(ev) {
-//=============================================================================
-// Called when user completes a mouse-button single-click event 
-// (e.g. mouse-button pressed down, then released)
-// 									   
-//    WHICH button? try:  console.log('ev.button='+ev.button); 
-// 		ev.clientX, ev.clientY == mouse pointer location, but measured in webpage 
-//		pixels: left-handed coords; UPPER left origin; Y increases DOWNWARDS (!) 
-//    See myMouseUp(), myMouseDown() for conversions to  CVV coordinates.
 
-  // STUB
-	console.log("myMouseClick() on button: ", ev.button); 
-}	
-
-function myMouseDblClick(ev) {
-//=============================================================================
-// Called when user completes a mouse-button double-click event 
-// 									   
-//    WHICH button? try:  console.log('ev.button='+ev.button); 
-// 		ev.clientX, ev.clientY == mouse pointer location, but measured in webpage 
-//		pixels: left-handed coords; UPPER left origin; Y increases DOWNWARDS (!) 
-//    See myMouseUp(), myMouseDown() for conversions to  CVV coordinates.
-
-  // STUB
-	console.log("myMouse-DOUBLE-Click() on button: ", ev.button); 
-}	
-
-function myKeyDown(kev) {
+function myKeyDown(ev) {
 //===============================================================================
-// Called when user presses down ANY key on the keyboard;
-//
+// Called when user presses down ANY key on the keyboard, and captures the 
+// keyboard's scancode or keycode(varies for different countries and alphabets).
+//  CAUTION: You may wish to avoid 'keydown' and 'keyup' events: if you DON'T 
+// need to sense non-ASCII keys (arrow keys, function keys, pgUp, pgDn, Ins, 
+// Del, etc), then just use the 'keypress' event instead.
+//	 The 'keypress' event captures the combined effects of alphanumeric keys and // the SHIFT, ALT, and CTRL modifiers.  It translates pressed keys into ordinary
+// ASCII codes; you'll get the ASCII code for uppercase 'S' if you hold shift 
+// and press the 's' key.
 // For a light, easy explanation of keyboard events in JavaScript,
 // see:    http://www.kirupa.com/html5/keyboard_events_in_javascript.htm
-// For a thorough explanation of a mess of JavaScript keyboard event handling,
+// For a thorough explanation of the messy way JavaScript handles keyboard events
 // see:    http://javascript.info/tutorial/keyboard-events
 //
-// NOTE: Mozilla deprecated the 'keypress' event entirely, and in the
-//        'keydown' event deprecated several read-only properties I used
-//        previously, including kev.charCode, kev.keyCode. 
-//        Revised 2/2019:  use kev.key and kev.code instead.
-//
-// Report EVERYTHING in console:
-  console.log(  "--kev.code:",    kev.code,   "\t\t--kev.key:",     kev.key, 
-              "\n--kev.ctrlKey:", kev.ctrlKey,  "\t--kev.shiftKey:",kev.shiftKey,
-              "\n--kev.altKey:",  kev.altKey,   "\t--kev.metaKey:", kev.metaKey);
 
-// and report EVERYTHING on webpage:
-	document.getElementById('KeyDownResult').innerHTML = ''; // clear old results
-  document.getElementById('KeyModResult' ).innerHTML = ''; 
-  // key details:
-  document.getElementById('KeyModResult' ).innerHTML = 
-        "   --kev.code:"+kev.code   +"      --kev.key:"+kev.key+
-    "<br>--kev.ctrlKey:"+kev.ctrlKey+" --kev.shiftKey:"+kev.shiftKey+
-    "<br>--kev.altKey:"+kev.altKey +"  --kev.metaKey:"+kev.metaKey;
- 
-	switch(kev.code) {
-		case "KeyP":
-			console.log("Pause/unPause!\n");                // print on console,
-			document.getElementById('KeyDownResult').innerHTML =  
-			'myKeyDown() found p/P key. Pause/unPause!';   // print on webpage
-			if(g_isRun==true) {
-			  g_isRun = false;    // STOP animation
-			  }
-			else {
-			  g_isRun = true;     // RESTART animation
-			  tick();
-			  }
-			break;
-		//------------------WASD navigation-----------------
-		case "KeyA":
-			console.log("a/A key: Strafe LEFT!\n");
-			document.getElementById('KeyDownResult').innerHTML =  
-			'myKeyDown() found a/A key. Strafe LEFT!';
-			break;
-    case "KeyD":
-			console.log("d/D key: Strafe RIGHT!\n");
-			document.getElementById('KeyDownResult').innerHTML = 
-			'myKeyDown() found d/D key. Strafe RIGHT!';
-			break;
-		case "KeyS":
-			console.log("s/S key: Move BACK!\n");
-			document.getElementById('KeyDownResult').innerHTML = 
-			'myKeyDown() found s/Sa key. Move BACK.';
-			break;
-		case "KeyW":
-			console.log("w/W key: Move FWD!\n");
-			document.getElementById('KeyDownResult').innerHTML =  
-			'myKeyDown() found w/W key. Move FWD!';
-			break;
-		//----------------Arrow keys------------------------
-		case "ArrowLeft": 	
+	switch(ev.keyCode) {			// keycodes !=ASCII, but are very consistent for 
+	//	nearly all non-alphanumeric keys for nearly all keyboards in all countries.
+		case 37:		// left-arrow key
+			// print in console:
 			console.log(' left-arrow.');
 			// and print on webpage in the <div> element with id='Result':
-  		document.getElementById('KeyDownResult').innerHTML =
-  			'myKeyDown(): Left Arrow='+kev.keyCode;
+  		document.getElementById('Result').innerHTML =
+  			' Left Arrow:keyCode='+ev.keyCode;
 			break;
-		case "ArrowRight":
-			console.log('right-arrow.');
-  		document.getElementById('KeyDownResult').innerHTML =
-  			'myKeyDown():Right Arrow:keyCode='+kev.keyCode;
-  		break;
-		case "ArrowUp":		
+		case 38:		// up-arrow key
 			console.log('   up-arrow.');
-  		document.getElementById('KeyDownResult').innerHTML =
-  			'myKeyDown():   Up Arrow:keyCode='+kev.keyCode;
+  		document.getElementById('Result').innerHTML =
+  			'   Up Arrow:keyCode='+ev.keyCode;
 			break;
-		case "ArrowDown":
+		case 39:		// right-arrow key
+			console.log('right-arrow.');
+  		document.getElementById('Result').innerHTML =
+  			'Right Arrow:keyCode='+ev.keyCode;
+  		break;
+		case 40:		// down-arrow key
 			console.log(' down-arrow.');
-  		document.getElementById('KeyDownResult').innerHTML =
-  			'myKeyDown(): Down Arrow:keyCode='+kev.keyCode;
-  		break;	
-    default:
-      console.log("UNUSED!");
-  		document.getElementById('KeyDownResult').innerHTML =
-  			'myKeyDown(): UNUSED!';
-      break;
+  		document.getElementById('Result').innerHTML =
+  			' Down Arrow:keyCode='+ev.keyCode;
+  		break;
+		default:
+			console.log('myKeyDown()--keycode=', ev.keyCode, ', charCode=', ev.charCode);
+  		document.getElementById('Result').innerHTML =
+  			'myKeyDown()--keyCode='+ev.keyCode;
+			break;
 	}
 }
 
-function myKeyUp(kev) {
+function myKeyUp(ev) {
 //===============================================================================
 // Called when user releases ANY key on the keyboard; captures scancodes well
 
-	console.log('myKeyUp()--keyCode='+kev.keyCode+' released.');
+	console.log('myKeyUp()--keyCode='+ev.keyCode+' released.');
+}
+
+function myKeyPress(ev) {
+//===============================================================================
+// Best for capturing alphanumeric keys and key-combinations such as 
+// CTRL-C, alt-F, SHIFT-4, etc.
+	console.log('myKeyPress():keyCode='+ev.keyCode  +', charCode=' +ev.charCode+
+												', shift='    +ev.shiftKey + ', ctrl='    +ev.ctrlKey +
+												', altKey='   +ev.altKey   +
+												', metaKey(Command key or Windows key)='+ev.metaKey);
 }

@@ -75,23 +75,8 @@ function main() {
 	// NEW!! Enable 3D depth-test when drawing: don't over-draw at any pixel 
 	// unless the new Z value is closer to the eye than the old one..
 //	gl.depthFunc(gl.LESS);			 // WebGL default setting: (default)
-	gl.enable(gl.DEPTH_TEST); 	 
-	 
-//==============================================================================
-// STEP 4:   REMOVE This "reversed-depth correction"
-//       when you apply any of the 3D camera-lens transforms: 
-//      (e.g. Matrix4 member functions 'perspective(), frustum(), ortho() ...)
-//======================REVERSED-DEPTH Correction===============================
-
-  //  b) reverse the usage of the depth-buffer's stored values, like this:
-  gl.enable(gl.DEPTH_TEST); // enabled by default, but let's be SURE.
-  gl.clearDepth(0.0);       // each time we 'clear' our depth buffer, set all
-                            // pixel depths to 0.0  (1.0 is DEFAULT)
-  gl.depthFunc(gl.GREATER); // draw a pixel only if its depth value is GREATER
-                            // than the depth buffer's stored value.
-                            // (gl.LESS is DEFAULT; reverse it!)
-//=====================================================================
-
+	gl.enable(gl.DEPTH_TEST); 	  
+	
   // Get handle to graphics system's storage location of u_ModelMatrix
   var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
   if (!u_ModelMatrix) { 
@@ -105,16 +90,18 @@ function main() {
   var currentAngle = 0.0;
 
 //-----------------  
+
   // Start drawing: create 'tick' variable whose value is this function:
   var tick = function() {
     currentAngle = animate(currentAngle);  // Update the rotation angle
-    drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
+    draw(gl, n, currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
     // report current angle on console
     //console.log('currentAngle=',currentAngle);
     requestAnimationFrame(tick, canvas);   
     									// Request that the browser re-draw the webpage
   };
   tick();							// start (and continue) animation: draw current image
+	
 }
 
 function initVertexBuffer(gl) {
@@ -172,6 +159,7 @@ function initVertexBuffer(gl) {
     console.log('Failed to get the storage location of a_Position');
     return -1;
   }
+
   var FSIZE = colorShapes.BYTES_PER_ELEMENT; // how many bytes per stored value?
 
   // Use handle to specify how to retrieve **POSITION** data from our VBO:
@@ -586,116 +574,123 @@ function makeGroundGrid() {
 	}
 }
 
-function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+function draw(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 //==============================================================================
   // Clear <canvas>  colors AND the depth buffer
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
 
 /*
-// STEP 2: add in a 'perspective()' function call here to define 'camera lens':
-  modelMatrix.perspective(	??,   // FOVY: top-to-bottom vertical image angle, in degrees
-                            ??,   // Image Aspect Ratio: camera lens width/height
-                           	??,   // camera z-near distance (always positive; frustum begins at z = -znear)
+// NOW PUT IN YOUR OWN 'PERSPECTIVE()' FUNCTION CALL HERE:
+  modelMatrix.perspective(	??, // FOVY: top-to-bottom vertical image angle, in degrees
+                           		??,  // Image Aspect Ratio: camera lens width/height
+                           		??,   // camera z-near distance (always positive; frustum begins at z = -znear)
                         		??);  // camera z-far distance (always positive; frustum ends at z = -zfar)
 
 */
-
-/*
-//  STEP 1:
+/*  STEP 1:
 // Make temporary view matrix that is still close to the origin and
 // won't lose sight of our current CVV contents when used without 
 // a properly-constructed projection matrix.
-//TEMPORARY: 1/10th size camera pose to see what's in CVV locations
+
   modelMatrix.lookAt( ??, ??, ??,	// center of projection
                       ??, ??, ??,	// look-at point 
                       ??, ??, ??);	// View UP vector.
 */
-
-/* STEP 3: 
+/* STEP 2: 
 //Replace the temporary view matrix with your final view matrix...
-// GOAL: camera positioned at 3D point (5,5,3), looking at the 
-//       3D point (-1,-2,-0.5),  using up vector (0,0,1).
 
   modelMatrix.lookAt( ??, ??, ??,	// center of projection
                       ??, ??, ??,	// look-at point 
                       ??, ??, ??);	// View UP vector.
 */
 
-  //===========================================================
-  //
   pushMatrix(modelMatrix);     // SAVE world coord system;
-    	//-------Draw Spinning Cylinder:
-    modelMatrix.translate(-0.4,-0.4, 0.0);  // 'set' means DISCARD old matrix,
-    						// (drawing axes centered in CVV), and then make new
-    						// drawing axes moved to the lower-left corner of CVV. 
-    modelMatrix.scale(0.2, 0.2, 0.2);
-    						// if you DON'T scale, cyl goes outside the CVV; clipped!
-    modelMatrix.rotate(currentAngle, 0, 1, 0);  // spin around y axis.
-  	// Drawing:
-    // Pass our current matrix to the vertex shaders:
-    gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-    // Draw the cylinder's vertices, and no other vertices:
-    gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
-    							cylStart/floatsPerVertex, // start at this vertex number, and
-    							cylVerts.length/floatsPerVertex);	// draw this many vertices.
-  modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
-
   //===========================================================
-  //  
-  pushMatrix(modelMatrix);  // SAVE world drawing coords.
-    //--------Draw Spinning Sphere
-    modelMatrix.translate( 0.4, 0.4, 0.0); // 'set' means DISCARD old matrix,
-    						// (drawing axes centered in CVV), and then make new
-    						// drawing axes moved to the lower-left corner of CVV.
-                          // to match WebGL display canvas.
-    modelMatrix.scale(0.3, 0.3, 0.3);
-    						// Make it smaller:
-    modelMatrix.rotate(currentAngle, 1, 1, 0);  // Spin on XY diagonal axis
-  	// Drawing:		
-  	// Pass our current matrix to the vertex shaders:
-    gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-    		// Draw just the sphere's vertices
-    gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
-    							sphStart/floatsPerVertex,	// start at this vertex number, and 
-    							sphVerts.length/floatsPerVertex);	// draw this many vertices.
-  modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+  	//-------Draw Spinning Cylinder:
+  modelMatrix.setTranslate(-0.4,-0.4, 0.0);  // 'set' means DISCARD old matrix,
+  						// (drawing axes centered in CVV), and then make new
+  						// drawing axes moved to the lower-left corner of CVV. 
   
+//=============================================================================  
+// ELIMINATE THIS WHEN YOU MAKE A PROJECTION TRANSFORMATION==================  
+  modelMatrix.scale(1,1,-1);							// convert to left-handed coord sys
+  														// to match WebGL display canvas.
+//============================================================================
+//============================================================================
+
+  modelMatrix.scale(0.2, 0.2, 0.2);
+  						// if you DON'T scale, cyl goes outside the CVV; clipped!
+  modelMatrix.rotate(currentAngle, 0, 1, 0);  // spin around y axis.
+	// Drawing:
+  // Pass our current matrix to the vertex shaders:
+  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+  // Draw the cylinder's vertices, and no other vertices:
+
+  gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+  							cylStart/floatsPerVertex, // start at this vertex number, and
+  							cylVerts.length/floatsPerVertex);	// draw this many vertices.
+  
+  modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
   //===========================================================
   //  
+
   pushMatrix(modelMatrix);  // SAVE world drawing coords.
+  //--------Draw Spinning Sphere
+  modelMatrix.setTranslate( 0.4, 0.4, 0.0); // 'set' means DISCARD old matrix,
+  						// (drawing axes centered in CVV), and then make new
+  						// drawing axes moved to the lower-left corner of CVV.  																				// to match WebGL display canvas.
+  modelMatrix.scale(0.3, 0.3, 0.3);
+  						// Make it smaller:
+  modelMatrix.rotate(currentAngle, 1, 1, 0);  // Spin on XY diagonal axis
+	// Drawing:		
+	// Pass our current matrix to the vertex shaders:
+  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+  		// Draw just the sphere's vertices
+  gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
+  							sphStart/floatsPerVertex,	// start at this vertex number, and 
+  							sphVerts.length/floatsPerVertex);	// draw this many vertices.
+  
+  modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
+  //===========================================================
+
   //--------Draw Spinning torus
-    modelMatrix.translate(-0.4, 0.4, 0.0);	// 'set' means DISCARD old matrix,
-  
-    modelMatrix.scale(0.3, 0.3, 0.3);
-    						// Make it smaller:
-    modelMatrix.rotate(currentAngle, 0, 1, 1);  // Spin on YZ axis
-  	// Drawing:		
-  	// Pass our current matrix to the vertex shaders:
-    gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-    		// Draw just the torus's vertices
-    gl.drawArrays(gl.TRIANGLE_STRIP, 				// use this drawing primitive, and
-    						  torStart/floatsPerVertex,	// start at this vertex number, and
-    						  torVerts.length/floatsPerVertex);	// draw this many vertices.
+  modelMatrix.setTranslate(-0.4, 0.4, 0.0);	// 'set' means DISCARD old matrix,
+  pushMatrix(modelMatrix);  // SAVE world drawing coords.
+  						// (drawing axes centered in CVV), and then make new
+  						// drawing axes moved to the lower-left corner of CVV.
+  modelMatrix.scale(1,1,-1);							// convert to left-handed coord sys
+  																				// to match WebGL display canvas.
+  modelMatrix.scale(0.3, 0.3, 0.3);
+  						// Make it smaller:
+  modelMatrix.rotate(currentAngle, 0, 1, 1);  // Spin on YZ axis
+	// Drawing:		
+	// Pass our current matrix to the vertex shaders:
+  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+  		// Draw just the torus's vertices
+  gl.drawArrays(gl.TRIANGLE_STRIP, 				// use this drawing primitive, and
+  						  torStart/floatsPerVertex,	// start at this vertex number, and
+  						  torVerts.length/floatsPerVertex);	// draw this many vertices.
   modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
   //===========================================================
-  //
+	//---------Draw Ground Plane, without spinning.
   pushMatrix(modelMatrix);  // SAVE world drawing coords.
-  	//---------Draw Ground Plane, without spinning.
-  	// position it.
-  	modelMatrix.translate( 0.4, -0.4, 0.0);	
-  	modelMatrix.scale(0.1, 0.1, 0.1);				// shrink by 10X:
-
-  	// Drawing:
-  	// Pass our current matrix to the vertex shaders:
-    gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-    // Draw just the ground-plane's vertices
-    gl.drawArrays(gl.LINES, 								// use this drawing primitive, and
-    						  gndStart/floatsPerVertex,	// start at this vertex number, and
-    						  gndVerts.length/floatsPerVertex);	// draw this many vertices.
+	// position it.
+	modelMatrix.setTranslate( 0.4, -0.4, 0.0);	
+	modelMatrix.scale(0.1, 0.1, 0.1);				// shrink by 10X:
+//	modelMatrix.rotate(-60.0, 1,0,0 );
+	// Drawing:
+	// Pass our current matrix to the vertex shaders:
+  gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+  // Draw just the ground-plane's vertices
+  gl.drawArrays(gl.LINES, 								// use this drawing primitive, and
+  						  gndStart/floatsPerVertex,	// start at this vertex number, and
+  						  gndVerts.length/floatsPerVertex);	// draw this many vertices.
+	
   modelMatrix = popMatrix();  // RESTORE 'world' drawing coords.
   //===========================================================
 }
+
 
 // Last time that this function was called:  (used for animation timing)
 var g_last = Date.now();
