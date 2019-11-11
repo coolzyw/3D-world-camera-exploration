@@ -58,6 +58,7 @@ var FSHADER_SOURCE =
 
 // --------------------- Eye positions -----------------------------------
 var g_EyeX = 5.0, g_EyeY = 5.0, g_EyeZ = 3.0; // Eye position
+var g_degree = 0;
 
 // --------------------- Global Variables----------------------------------
 var canvas;		// main() sets this to the HTML-5 'canvas' element used for WebGL.
@@ -136,7 +137,7 @@ function main() {
 	// KEYBOARD:
 	// The 'keyDown' and 'keyUp' events respond to ALL keys on the keyboard,
 	//      including shift,alt,ctrl,arrow, pgUp, pgDn,f1,f2...f12 etc.
-	// window.addEventListener("keydown", myKeyDown, false);
+	window.addEventListener("keydown", myKeyDown, false);
 	// After each 'keydown' event, call the 'myKeyDown()' function.  The 'false'
 	// arg (default) ensures myKeyDown() call in 'bubbling', not 'capture' stage)
 	// ( https://www.w3schools.com/jsref/met_document_addeventlistener.asp )
@@ -211,6 +212,7 @@ function main() {
 	var currentAnglePivot = 80;
 
 	document.onkeydown = function(ev){ keydown(ev, gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix); };
+	document.onkeyup = function(ev){ keyup(ev, gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix); };
 	document.onkeyup = function(ev){ keyup(ev, gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix); };
 
 
@@ -1282,9 +1284,9 @@ function makeGroundGrid() {
 // Create a list of vertices that create a large grid of lines in the x,y plane
 // centered at the origin.  Draw this shape using the GL_LINES primitive.
 
-	var xcount = 100;			// # of lines to draw in x,y to make the grid.
-	var ycount = 100;
-	var xymax	= 50;			// grid size; extends to cover +/-xymax in x and y.
+	var xcount = 200;			// # of lines to draw in x,y to make the grid.
+	var ycount = 200;
+	var xymax	= 500;			// grid size; extends to cover +/-xymax in x and y.
 	var xColr = new Float32Array([1.0, 1.0, 0.3]);	// bright yellow
 	var yColr = new Float32Array([0.5, 1.0, 0.5]);	// bright green.
 
@@ -1292,13 +1294,13 @@ function makeGroundGrid() {
 	gndVerts = new Float32Array(floatsPerVertex*2*(xcount+ycount));
 	// draw a grid made of xcount+ycount lines; 2 vertices per line.
 
-	var xgap = xymax/(xcount-1);		// HALF-spacing between lines in x,y;
-	var ygap = xymax/(ycount-1);		// (why half? because v==(0line number/2))
+	var xgap = xymax/ (xcount-1);		// HALF-spacing between lines in x,y;
+	var ygap = xymax/ (ycount-1);		// (why half? because v==(0line number/2))
 
 	// First, step thru x values as we make vertical lines of constant-x:
 	for(v=0, j=0; v<2*xcount; v++, j+= floatsPerVertex) {
 		if(v%2==0) {	// put even-numbered vertices at (xnow, -xymax, 0)
-			gndVerts[j  ] = -xymax + (v  )*xgap;	// x
+			gndVerts[j  ] = -xymax + (v)*xgap;	// x
 			gndVerts[j+1] = -xymax;								// y
 			gndVerts[j+2] = 0.0;									// z
 			gndVerts[j+3] = 1.0;									// w.
@@ -1343,12 +1345,12 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 	gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
 
 	modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
-	modelMatrix.perspective(42.0,   // FOVY: top-to-bottom vertical image angle, in degrees
+	modelMatrix.perspective(42.0 + g_degree,   // FOVY: top-to-bottom vertical image angle, in degrees
 		1.0,   // Image Aspect Ratio: camera lens width/height
 		1.0,   // camera z-near distance (always positive; frustum begins at z = -znear)
 		1000.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
 	modelMatrix.lookAt(g_EyeX, g_EyeY, g_EyeZ,     // center of projection
-		-1.0, -2.0, -0.5,      // look-at point
+		-1.0 + g_EyeX, -2.0 + g_EyeY, -0.5 + g_EyeZ,      // look-at point
 		0.0,  0.0,  1.0);     // 'up' vector
 
 	//-------Draw Spinning Cylinder:
@@ -1627,7 +1629,7 @@ function drawCylinder(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatri
 function drawLine(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
 	modelMatrix = popMatrix();
 	modelMatrix.scale(2, 2, 2);
-	modelMatrix.translate(-2.3, -2.7, 0);  // 'set' means DISCARD old matrix,
+	modelMatrix.translate(-2.3, -2.7, 0.5);  // 'set' means DISCARD old matrix,
 	//-------------------------------
 	// Drawing:
 	// Use the current ModelMatrix to transform & draw something new from our VBO:
@@ -2097,6 +2099,13 @@ function myKeyDown(kev) {
 			console.log("d/D key: Strafe RIGHT!\n");
 			document.getElementById('KeyDownResult').innerHTML =
 				'myKeyDown() found d/D key. Strafe RIGHT!';
+			g_degree -= 5;
+			break;
+		case "KeyU":
+			console.log("d/D key: Strafe RIGHT!\n");
+			document.getElementById('KeyDownResult').innerHTML =
+				'myKeyDown() found d/D key. Strafe RIGHT!';
+			g_degree += 5;
 			break;
 		case "KeyS":
 			console.log("s/S key: Move BACK!\n");
@@ -2137,13 +2146,13 @@ function myKeyDown(kev) {
 			console.log('   up-arrow.');
 			document.getElementById('KeyDownResult').innerHTML =
 				'myKeyDown():   Up Arrow:keyCode='+kev.keyCode;
-			move_y2 += 0.03;
+			g_EyeY -= 0.1;
 			break;
 		case "ArrowDown":
 			console.log(' down-arrow.');
 			document.getElementById('KeyDownResult').innerHTML =
 				'myKeyDown(): Down Arrow:keyCode='+kev.keyCode;
-			move_y2 -= 0.03;
+			g_EyeY += 0.1;
 			break;
 		default:
 			console.log("UNUSED!");
@@ -2176,6 +2185,20 @@ function keyup(ev, gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelM
 	} else
 	if (ev.keyCode == 40) { // The left arrow key was pressed
 		g_EyeY += 0.1;
+	} else { return; } // Prevent the unnecessary drawing
+	// drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
+}
+
+
+function lookUpDown(ev, gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
+//===============================================================================
+// Called when user releases ANY key on the keyboard; captures scancodes well
+	console.log('myKeyUp()--keyCode='+ev.keyCode+' released.');
+	if(ev.keyCode == 68) { // The right arrow key was pressed
+		g_degree -= 5;
+	} else
+	if (ev.keyCode == 40) { // The left arrow key was pressed
+		g_degree += 5;
 	} else { return; } // Prevent the unnecessary drawing
 	// drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
 }
