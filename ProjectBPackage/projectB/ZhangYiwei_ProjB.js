@@ -230,6 +230,8 @@ function main() {
 		drawTop(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);   // Draw shapes
 		drawCube(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
 		drawPyramid(gl, n, currentAngle, u_ModelMatrix, u_ViewMatrix, viewMatrix);
+		drawCylinder(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
+		drawSphere(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
 		// drawRobot(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
 		// report current angle on console
 		//console.log('currentAngle=',currentAngle);
@@ -1330,6 +1332,10 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 	pushMatrix(modelMatrix);
 	// save for the second object
 	pushMatrix(modelMatrix);
+	// save for the rod object
+	pushMatrix(modelMatrix);
+	// save for the sphere object
+	pushMatrix(modelMatrix);
 
 	modelMatrix.translate(move_x - 0.4, move_y - 0.2, 0.4);  // 'set' means DISCARD old matrix,
 	// (drawing axes centered in CVV), and then make new
@@ -1572,6 +1578,28 @@ function drawPyramid(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix
 	// Draw just the first set of vertices: start at vertex SHAPE_0_SIZE
 	gl.drawArrays(gl.TRIANGLES, pyramidStart/floatsPerVertex, pyramidShapes.length/floatsPerVertex);
 	pushMatrix(modelMatrix);
+}
+
+function drawCylinder(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
+	modelMatrix = popMatrix();
+	modelMatrix.scale(0.8, 0.8, 0.3);
+	modelMatrix.translate(10, 8, -1);  // 'set' means DISCARD old matrix,
+	modelMatrix.rotate(g_angle03, 0, 0, 1);
+	// convert to left-handed coord sys
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	// Draw just the first set of vertices: start at vertex SHAPE_0_SIZE
+	gl.drawArrays(gl.TRIANGLE_STRIP, RodStart3/floatsPerVertex, rodVerts.length/floatsPerVertex);
+}
+
+function drawSphere(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
+	modelMatrix = popMatrix();
+	modelMatrix.scale(0.3, 0.3, 0.3);
+	modelMatrix.translate(3, -4, 1);  // 'set' means DISCARD old matrix,
+	modelMatrix.rotate(g_angle03, 0, 0, 1);
+	// convert to left-handed coord sys
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	// Draw just the first set of vertices: start at vertex SHAPE_0_SIZE
+	gl.drawArrays(gl.TRIANGLE_STRIP, sphStart/floatsPerVertex, sphVerts.length/floatsPerVertex);
 }
 
 function drawRobot(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix) {
