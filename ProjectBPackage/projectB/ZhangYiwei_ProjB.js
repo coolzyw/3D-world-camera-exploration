@@ -228,6 +228,8 @@ function main() {
 		// animate3();
 		// animate4();
 		drawTop(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);   // Draw shapes
+		drawCube(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
+		drawPyramid(gl, n, currentAngle, u_ModelMatrix, u_ViewMatrix, viewMatrix);
 		// drawRobot(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
 		// report current angle on console
 		//console.log('currentAngle=',currentAngle);
@@ -260,6 +262,7 @@ function initVertexBuffer(gl) {
 	makeBody();
 	makeArm2();
 	makeLeg();
+	makePyramid();
 
 	// how many floats total needed to store all shapes?
 	var mySiz = (cylVerts.length * 10 + sphVerts.length * 10 +
@@ -346,6 +349,10 @@ function initVertexBuffer(gl) {
 	RodStart3 = i;
 	for(j=0; j< rodVerts.length; i++, j++) {// don't initialize i -- reuse it!
 		colorShapes[i] = rodVerts[j];
+	}
+	pyramidStart = i;
+	for(j=0; j< pyramidShapes.length; i++, j++) {// don't initialize i -- reuse it!
+		colorShapes[i] = pyramidShapes[j];
 	}
 
 
@@ -662,7 +669,6 @@ function makeLeg() {
 		1.0 * length,  1.0 * width, -1.0 * height, 1.0,	   0.3, 0, 0.4, 	// Node 2
 
 	]);
-
 }
 
 
@@ -741,7 +747,38 @@ function makeArm2() {
 		1.0 * length,  1.0 * width, -1.0 * height, 1.0,	  0.8,0.5,0.6,	// Node 2
 
 	]);
+}
 
+
+function makePyramid() {
+	var c30 = Math.sqrt(0.75);
+	var sq2	= Math.sqrt(2.0);
+	pyramidShapes = new Float32Array( [
+		// Vertex coordinates(x,y,z,w) and color (R,G,B) for a new color tetrahedron:
+		//		Apex on +z axis; equilateral triangle base at z=0
+		/*	Nodes:
+                 0.0,	 0.0, sq2, 1.0,			0.0, 	0.0,	1.0,	// Node 0 (apex, +z axis;  blue)
+             c30, -0.5, 0.0, 1.0, 		1.0,  0.0,  0.0, 	// Node 1 (base: lower rt; red)
+             0.0,  1.0, 0.0, 1.0,  		0.0,  1.0,  0.0,	// Node 2 (base: +y axis;  grn)
+            -c30, -0.5, 0.0, 1.0, 		1.0,  1.0,  1.0, 	// Node 3 (base:lower lft; white)
+        */
+		// Face 0: (right side)
+		0.0,	 0.0, sq2, 1.0,		0.0, 	0.0,	1.0,	// Node 0 (apex, +z axis;  blue)
+		c30, -0.5, 0.0, 1.0, 		1.0,  0.0,  0.0, 	// Node 1 (base: lower rt; red)
+		0.0,  1.0, 0.0, 1.0,  		0.0,  1.0,  0.0,	// Node 2 (base: +y axis;  grn)
+		// Face 1: (left side)
+		0.0,	 0.0, sq2, 1.0,			0.0, 	0.0,	1.0,	// Node 0 (apex, +z axis;  blue)
+		0.0,  1.0, 0.0, 1.0,  		0.0,  1.0,  0.0,	// Node 2 (base: +y axis;  grn)
+		-c30, -0.5, 0.0, 1.0, 		1.0,  1.0,  1.0, 	// Node 3 (base:lower lft; white)
+		// Face 2: (lower side)
+		0.0,	 0.0, sq2, 1.0,			0.0, 	0.0,	1.0,	// Node 0 (apex, +z axis;  blue)
+		-c30, -0.5, 0.0, 1.0, 		1.0,  1.0,  1.0, 	// Node 3 (base:lower lft; white)
+		c30, -0.5, 0.0, 1.0, 		1.0,  0.0,  0.0, 	// Node 1 (base: lower rt; red)
+		// Face 3: (base side)
+		-c30, -0.5, 0.0, 1.0, 		1.0,  1.0,  1.0, 	// Node 3 (base:lower lft; white)
+		0.0,  1.0, 0.0, 1.0,  		0.0,  1.0,  0.0,	// Node 2 (base: +y axis;  grn)
+		c30, -0.5, 0.0, 1.0, 		1.0,  0.0,  0.0, 	// Node 1 (base: lower rt; red)
+	]);
 }
 
 
@@ -1289,13 +1326,15 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 		0.0,  0.0,  1.0);     // 'up' vector
 
 	//-------Draw Spinning Cylinder:
-	// save the previous modelMatrix
+	// save the previous modelMatrix for ground grid
+	pushMatrix(modelMatrix);
+	// save for the second object
 	pushMatrix(modelMatrix);
 
 	modelMatrix.translate(move_x - 0.4, move_y - 0.2, 0.4);  // 'set' means DISCARD old matrix,
 	// (drawing axes centered in CVV), and then make new
 	// drawing axes moved to the lower-left corner of CVV.
-	modelMatrix.scale(0.15, 0.15, 0.15);
+	modelMatrix.scale(0.2, 0.2, 0.2);
 	// if you DON'T scale, cyl goes outside the CVV; clipped!
 	modelMatrix.rotate(-90, 0, 0, 1);
 	modelMatrix.rotate(currentAngle, 1, 0, 1)
@@ -1510,6 +1549,29 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 	gl.drawArrays(gl.LINES, 								// use this drawing primitive, and
 		gndStart/floatsPerVertex,	// start at this vertex number, and
 		gndVerts.length/floatsPerVertex);	// draw this many vertices.
+}
+
+function drawCube(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
+	modelMatrix = popMatrix();
+	modelMatrix.translate(-2, -2, 0.5);
+	modelMatrix.scale(0.5, 0.5, 0.5);
+	modelMatrix.rotate(g_angle03, 0, 0, 1);
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	// Draw just the first set of vertices: start at vertex SHAPE_0_SIZE
+	gl.drawArrays(gl.TRIANGLES, cubeStart1/floatsPerVertex, cubeVerts1.length/floatsPerVertex);
+	pushMatrix(modelMatrix);
+}
+
+
+function drawPyramid(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
+	modelMatrix = popMatrix();
+	modelMatrix.translate(6, -2, 0);
+	modelMatrix.scale(1, 1, 1);
+	modelMatrix.rotate(60, 0, 0, 1);
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	// Draw just the first set of vertices: start at vertex SHAPE_0_SIZE
+	gl.drawArrays(gl.TRIANGLES, pyramidStart/floatsPerVertex, pyramidShapes.length/floatsPerVertex);
+	pushMatrix(modelMatrix);
 }
 
 function drawRobot(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix) {
