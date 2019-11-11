@@ -232,6 +232,7 @@ function main() {
 		drawPyramid(gl, n, currentAngle, u_ModelMatrix, u_ViewMatrix, viewMatrix);
 		drawCylinder(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
 		drawSphere(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
+		drawLine(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
 		// drawRobot(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
 		// report current angle on console
 		//console.log('currentAngle=',currentAngle);
@@ -265,6 +266,7 @@ function initVertexBuffer(gl) {
 	makeArm2();
 	makeLeg();
 	makePyramid();
+	makeAxis();
 
 	// how many floats total needed to store all shapes?
 	var mySiz = (cylVerts.length * 10 + sphVerts.length * 10 +
@@ -355,6 +357,10 @@ function initVertexBuffer(gl) {
 	pyramidStart = i;
 	for(j=0; j< pyramidShapes.length; i++, j++) {// don't initialize i -- reuse it!
 		colorShapes[i] = pyramidShapes[j];
+	}
+	lineStart = i;
+	for(j=0; j< lineColors.length; i++, j++) {// don't initialize i -- reuse it!
+		colorShapes[i] = lineColors[j];
 	}
 
 
@@ -783,6 +789,21 @@ function makePyramid() {
 	]);
 }
 
+function makeAxis() {
+	lineColors = new Float32Array([
+		// Drawing Axes: Draw them using gl.LINES drawing primitive;
+		// +x axis RED; +y axis GREEN; +z axis BLUE; origin: GRAY
+		0.0,  0.0,  0.0, 1.0,		0.3,  0.3,  0.3,	// X axis line (origin: gray)
+		1.3,  0.0,  0.0, 1.0,		1.0,  0.3,  0.3,	// 						 (endpoint: red)
+
+		0.0,  0.0,  0.0, 1.0,    0.3,  0.3,  0.3,	// Y axis line (origin: white)
+		0.0,  1.3,  0.0, 1.0,		0.3,  1.0,  0.3,	//						 (endpoint: green)
+
+		0.0,  0.0,  0.0, 1.0,		0.3,  0.3,  0.3,	// Z axis line (origin:white)
+		0.0,  0.0,  1.3, 1.0,		0.3,  0.3,  1.0,	//						 (endpoint: blue)
+	]);
+}
+
 
 function makeRod() {
 	var topColr = new Float32Array([0.8, 0.8, 0.0]);	// light yellow top,
@@ -889,6 +910,7 @@ function makeRod() {
 		}
 	}
 }
+
 
 function makePivot() {
 // Make a cylinder shape from one TRIANGLE_STRIP drawing primitive, using the
@@ -1336,11 +1358,12 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 	pushMatrix(modelMatrix);
 	// save for the sphere object
 	pushMatrix(modelMatrix);
+	// save for the axis
 
-	modelMatrix.translate(move_x - 0.4, move_y - 0.2, 0.4);  // 'set' means DISCARD old matrix,
+	modelMatrix.translate(move_x, move_y - 0.2, 0.4);  // 'set' means DISCARD old matrix,
 	// (drawing axes centered in CVV), and then make new
 	// drawing axes moved to the lower-left corner of CVV.
-	modelMatrix.scale(0.2, 0.2, 0.2);
+	modelMatrix.scale(0.4, 0.4, 0.4);
 	// if you DON'T scale, cyl goes outside the CVV; clipped!
 	modelMatrix.rotate(-90, 0, 0, 1);
 	modelMatrix.rotate(currentAngle, 1, 0, 1)
@@ -1352,6 +1375,14 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 	gl.drawArrays(gl.TRIANGLE_STRIP,				// use this drawing primitive, and
 		cylStart/floatsPerVertex, // start at this vertex number, and
 		cylVerts.length/floatsPerVertex);	// draw this many vertices.
+	pushMatrix(modelMatrix);
+
+	modelMatrix.scale(3,3,3);
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	gl.drawArrays(gl.LINES,lineStart/floatsPerVertex,lineColors.length/floatsPerVertex);
+
+	modelMatrix = popMatrix();
+
 	pushMatrix(modelMatrix); // spinning sphere top1
 	pushMatrix(modelMatrix); // spinning sphere top2
 	pushMatrix(modelMatrix); // spinning sphere side
@@ -1589,6 +1620,21 @@ function drawCylinder(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatri
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 	// Draw just the first set of vertices: start at vertex SHAPE_0_SIZE
 	gl.drawArrays(gl.TRIANGLE_STRIP, RodStart3/floatsPerVertex, rodVerts.length/floatsPerVertex);
+}
+
+function drawLine(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
+	modelMatrix = popMatrix();
+	modelMatrix.scale(2, 2, 2);
+	modelMatrix.translate(-2.3, -2.7, 0);  // 'set' means DISCARD old matrix,
+	//-------------------------------
+	// Drawing:
+	// Use the current ModelMatrix to transform & draw something new from our VBO:
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	// Draw the last 2 faces of our tetrahedron: starting at vertex #6,
+	// draw the next 6 vertices using the 'gl.TRIANGLES' drawing primitive
+	// Next, use the gl.LINES drawing primitive on vertices 12 thru 18 to
+	// depict our current 'drawing axes' onscreen:
+	gl.drawArrays(gl.LINES,lineStart/floatsPerVertex,lineColors.length/floatsPerVertex);				// start at vertex #12; draw 6 vertices
 }
 
 function drawSphere(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
