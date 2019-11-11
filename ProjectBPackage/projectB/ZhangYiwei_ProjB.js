@@ -136,11 +136,11 @@ function main() {
 	// KEYBOARD:
 	// The 'keyDown' and 'keyUp' events respond to ALL keys on the keyboard,
 	//      including shift,alt,ctrl,arrow, pgUp, pgDn,f1,f2...f12 etc.
-	window.addEventListener("keydown", myKeyDown, false);
+	// window.addEventListener("keydown", myKeyDown, false);
 	// After each 'keydown' event, call the 'myKeyDown()' function.  The 'false'
 	// arg (default) ensures myKeyDown() call in 'bubbling', not 'capture' stage)
 	// ( https://www.w3schools.com/jsref/met_document_addeventlistener.asp )
-	window.addEventListener("keyup", myKeyUp, false);
+	// window.addEventListener("keyup", myKeyUp, false);
 	// Called when user RELEASES the key.  Now rarely used...
 
 	// MOUSE:
@@ -211,6 +211,8 @@ function main() {
 	var currentAnglePivot = 80;
 
 	document.onkeydown = function(ev){ keydown(ev, gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix); };
+	document.onkeyup = function(ev){ keyup(ev, gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix); };
+
 
 	// Create the matrix to specify the viewing volume and pass it to u_ProjMatrix
 	var projMatrix = new Matrix4();
@@ -2151,20 +2153,31 @@ function myKeyDown(kev) {
 	}
 }
 
-function keydown(ev, gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
-	if(ev.keyCode == 39) { // The right arrow key was pressed
-		g_EyeX += 0.1;
-	} else
-	if (ev.keyCode == 37) { // The left arrow key was pressed
-		g_EyeX -= 0.1;
-	} else { return; } // Prevent the unnecessary drawing
-	drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
+function myKeyUp(kev) {
+	console.log("other key is pressed");
 }
 
-function myKeyUp(kev) {
+function keydown(ev, gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
+	if(ev.keyCode == 39) { // The right arrow key was pressed
+		g_EyeX -= 0.1;
+	} else
+	if (ev.keyCode == 37) { // The left arrow key was pressed
+		g_EyeX += 0.1;
+	} else { return; } // Prevent the unnecessary drawing
+	// drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
+}
+
+function keyup(ev, gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
 //===============================================================================
 // Called when user releases ANY key on the keyboard; captures scancodes well
-	console.log('myKeyUp()--keyCode='+kev.keyCode+' released.');
+	console.log('myKeyUp()--keyCode='+ev.keyCode+' released.');
+	if(ev.keyCode == 38) { // The right arrow key was pressed
+		g_EyeY -= 0.1;
+	} else
+	if (ev.keyCode == 40) { // The left arrow key was pressed
+		g_EyeY += 0.1;
+	} else { return; } // Prevent the unnecessary drawing
+	// drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
 }
 
 
