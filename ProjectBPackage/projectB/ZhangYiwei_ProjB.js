@@ -57,8 +57,9 @@ var FSHADER_SOURCE =
 	'}\n';
 
 // --------------------- Eye positions -----------------------------------
-var g_EyeX = 5.0, g_EyeY = 5.0, g_EyeZ = 3.0; // Eye position
+var g_EyeX = -0.5, g_EyeY = 8.6, g_EyeZ = 2; // Eye position
 var g_degree = 0;
+var theta = -3.14;
 
 // --------------------- Global Variables----------------------------------
 var canvas;		// main() sets this to the HTML-5 'canvas' element used for WebGL.
@@ -86,9 +87,7 @@ var g_last_cylinder = Date.now();    // time when we last drew a picture
 var g_last_rod = Date.now();
 var g_last_robot = Date.now();
 var g_last_upper_arm = Date.now();
-var elapsed = 0;
 var g_isRun = true;
-var g_robot_isRun = true;
 var g_angleRateTmp = 0;
 var g_angleRate02 = 40;
 var g_angle02 = 0;
@@ -210,11 +209,6 @@ function main() {
 	// Create, init current rotation angle value in JavaScript
 	var currentAngle = 0.0;
 	var currentAnglePivot = 80;
-
-	document.onkeydown = function(ev){ keydown(ev, gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix); };
-	document.onkeyup = function(ev){ keyup(ev, gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix); };
-	document.onkeyup = function(ev){ keyup(ev, gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix); };
-
 
 	// Create the matrix to specify the viewing volume and pass it to u_ProjMatrix
 	var projMatrix = new Matrix4();
@@ -1345,12 +1339,13 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 	gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
 
 	modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
-	modelMatrix.perspective(42.0 + g_degree,   // FOVY: top-to-bottom vertical image angle, in degrees
+	modelMatrix.perspective(42.0,   // FOVY: top-to-bottom vertical image angle, in degrees
 		1.0,   // Image Aspect Ratio: camera lens width/height
 		1.0,   // camera z-near distance (always positive; frustum begins at z = -znear)
 		1000.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
+	console.log("parameters", g_EyeX, g_EyeY, g_EyeZ, theta);
 	modelMatrix.lookAt(g_EyeX, g_EyeY, g_EyeZ,     // center of projection
-		-1.0 + g_EyeX, -2.0 + g_EyeY, -0.5 + g_EyeZ,      // look-at point
+		g_EyeX + Math.sin(theta), g_EyeY + Math.cos(theta), g_EyeZ ,      // look-at point
 		0.0,  0.0,  1.0);     // 'up' vector
 
 	//-------Draw Spinning Cylinder:
@@ -2090,57 +2085,59 @@ function myKeyDown(kev) {
 			}
 			break;
 		//------------------WASD navigation-----------------
-		case "KeyA":
-			console.log("a/A key: Strafe LEFT!\n");
-			document.getElementById('KeyDownResult').innerHTML =
-				'myKeyDown() found a/A key. Strafe LEFT!';
-			break;
 		case "KeyD":
-			console.log("d/D key: Strafe RIGHT!\n");
-			document.getElementById('KeyDownResult').innerHTML =
-				'myKeyDown() found d/D key. Strafe RIGHT!';
-			g_degree -= 5;
+			theta += 0.05;
 			break;
-		case "KeyU":
-			console.log("d/D key: Strafe RIGHT!\n");
-			document.getElementById('KeyDownResult').innerHTML =
-				'myKeyDown() found d/D key. Strafe RIGHT!';
-			g_degree += 5;
+		case "KeyA":
+			theta -= 0.05;
+			theta -= 0.05;
 			break;
 		case "KeyS":
-			console.log("s/S key: Move BACK!\n");
+			console.log("d/D key: Strafe RIGHT!\n");
 			document.getElementById('KeyDownResult').innerHTML =
-				'myKeyDown() found s/Sa key. Move BACK.';
-			if(g_robot_isRun == false) {
-				g_robot_isRun = true;    // start
-				controlSpinRobot();
-				document.getElementById("spin-the-robot").innerText = "Robot is spinning in a circle!"
-			}
-			else {
-				g_robot_isRun = false;     // stop-
-				controlSpinRobot();
-				document.getElementById("spin-the-robot").innerText = "";
-				// tick();
-			}
+				'myKeyDown() found d/D key. Strafe RIGHT!';
+			g_EyeZ -= 0.1;
 			break;
 		case "KeyW":
-			console.log("w/W key: Move FWD!\n");
+			console.log("d/D key: Strafe RIGHT!\n");
 			document.getElementById('KeyDownResult').innerHTML =
-				'myKeyDown() found w/W key. Move FWD!';
+				'myKeyDown() found d/D key. Strafe RIGHT!';
+			g_EyeZ += 0.1;
 			break;
+		// case "KeyS":
+		// 	console.log("s/S key: Move BACK!\n");
+		// 	document.getElementById('KeyDownResult').innerHTML =
+		// 		'myKeyDown() found s/Sa key. Move BACK.';
+		// 	if(g_robot_isRun == false) {
+		// 		g_robot_isRun = true;    // start
+		// 		controlSpinRobot();
+		// 		document.getElementById("spin-the-robot").innerText = "Robot is spinning in a circle!"
+		// 	}
+		// 	else {
+		// 		g_robot_isRun = false;     // stop-
+		// 		controlSpinRobot();
+		// 		document.getElementById("spin-the-robot").innerText = "";
+		// 		// tick();
+		// 	}
+		// 	break;
+		// case "KeyW":
+		// 	console.log("w/W key: Move FWD!\n");
+		// 	document.getElementById('KeyDownResult').innerHTML =
+		// 		'myKeyDown() found w/W key. Move FWD!';
+		// 	break;
 		//----------------Arrow keys------------------------
 		case "ArrowLeft":
 			console.log(' left-arrow.');
 			// and print on webpage in the <div> element with id='Result':
 			document.getElementById('KeyDownResult').innerHTML =
 				'myKeyDown(): Left Arrow='+kev.keyCode;
-			move_x2 -= 0.03;
+			g_EyeX += 0.1;
 			break;
 		case "ArrowRight":
 			console.log('right-arrow.');
 			document.getElementById('KeyDownResult').innerHTML =
 				'myKeyDown():Right Arrow:keyCode='+kev.keyCode;
-			move_x2 += 0.03;
+			g_EyeX -= 0.1;
 			break;
 		case "ArrowUp":
 			console.log('   up-arrow.');
@@ -2161,46 +2158,4 @@ function myKeyDown(kev) {
 			break;
 	}
 }
-
-function myKeyUp(kev) {
-	console.log("other key is pressed");
-}
-
-function keydown(ev, gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
-	if(ev.keyCode == 39) { // The right arrow key was pressed
-		g_EyeX -= 0.1;
-	} else
-	if (ev.keyCode == 37) { // The left arrow key was pressed
-		g_EyeX += 0.1;
-	} else { return; } // Prevent the unnecessary drawing
-	// drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
-}
-
-function keyup(ev, gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
-//===============================================================================
-// Called when user releases ANY key on the keyboard; captures scancodes well
-	console.log('myKeyUp()--keyCode='+ev.keyCode+' released.');
-	if(ev.keyCode == 38) { // The right arrow key was pressed
-		g_EyeY -= 0.1;
-	} else
-	if (ev.keyCode == 40) { // The left arrow key was pressed
-		g_EyeY += 0.1;
-	} else { return; } // Prevent the unnecessary drawing
-	// drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
-}
-
-
-function lookUpDown(ev, gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
-//===============================================================================
-// Called when user releases ANY key on the keyboard; captures scancodes well
-	console.log('myKeyUp()--keyCode='+ev.keyCode+' released.');
-	if(ev.keyCode == 68) { // The right arrow key was pressed
-		g_degree -= 5;
-	} else
-	if (ev.keyCode == 40) { // The left arrow key was pressed
-		g_degree += 5;
-	} else { return; } // Prevent the unnecessary drawing
-	// drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
-}
-
 
