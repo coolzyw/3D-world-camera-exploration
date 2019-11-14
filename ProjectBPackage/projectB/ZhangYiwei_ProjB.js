@@ -58,8 +58,10 @@ var FSHADER_SOURCE =
 
 // --------------------- Eye positions -----------------------------------
 var g_EyeX = -0.5, g_EyeY = 8.6, g_EyeZ = 2; // Eye position
-var g_degree = 0;
+var forward = 0;
+var sideway = 0;
 var theta = -3.14;
+var turn_height = 0;
 
 // --------------------- Global Variables----------------------------------
 var canvas;		// main() sets this to the HTML-5 'canvas' element used for WebGL.
@@ -74,7 +76,6 @@ var g_canvas = document.getElementById('webgl');
 
 // --------------------- Animation --------------------------------------
 var ANGLE_STEP = 45.0;		// Rotation angle rate (degrees/second)
-var LENGTH_STEP = 0.2;
 var floatsPerVertex = 7;	// # of Float32Array elements used for each vertex
 // (x,y,z,w)position + (r,g,b)color
 // Later, see if you can add:
@@ -1345,7 +1346,7 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 		1000.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
 	console.log("parameters", g_EyeX, g_EyeY, g_EyeZ, theta);
 	modelMatrix.lookAt(g_EyeX, g_EyeY, g_EyeZ,     // center of projection
-		g_EyeX + Math.sin(theta), g_EyeY + Math.cos(theta), g_EyeZ ,      // look-at point
+		g_EyeX + Math.sin(theta), g_EyeY + Math.cos(theta), g_EyeZ + turn_height,      // look-at point
 		0.0,  0.0,  1.0);     // 'up' vector
 
 	//-------Draw Spinning Cylinder:
@@ -2086,23 +2087,22 @@ function myKeyDown(kev) {
 			break;
 		//------------------WASD navigation-----------------
 		case "KeyD":
-			theta += 0.05;
+			theta += 0.03;
 			break;
 		case "KeyA":
-			theta -= 0.05;
-			theta -= 0.05;
+			theta -= 0.03;
 			break;
 		case "KeyS":
 			console.log("d/D key: Strafe RIGHT!\n");
 			document.getElementById('KeyDownResult').innerHTML =
 				'myKeyDown() found d/D key. Strafe RIGHT!';
-			g_EyeZ -= 0.1;
+			turn_height -= 0.03;
 			break;
 		case "KeyW":
 			console.log("d/D key: Strafe RIGHT!\n");
 			document.getElementById('KeyDownResult').innerHTML =
 				'myKeyDown() found d/D key. Strafe RIGHT!';
-			g_EyeZ += 0.1;
+			turn_height += 0.03;
 			break;
 		// case "KeyS":
 		// 	console.log("s/S key: Move BACK!\n");
