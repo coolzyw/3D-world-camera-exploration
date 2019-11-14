@@ -59,7 +59,7 @@ var FSHADER_SOURCE =
 // --------------------- Eye positions -----------------------------------
 var g_EyeX = -0.5, g_EyeY = 8.6, g_EyeZ = 2; // Eye position
 var forward = 0.5;
-var sideway = 0;
+var sideway = 0.3;
 var theta = -3.14;
 var turn_height = 0;
 
@@ -2131,13 +2131,15 @@ function myKeyDown(kev) {
 			// and print on webpage in the <div> element with id='Result':
 			document.getElementById('KeyDownResult').innerHTML =
 				'myKeyDown(): Left Arrow='+kev.keyCode;
-			g_EyeX += 0.1;
+			g_EyeX -= Math.cos(theta) * sideway;
+			g_EyeY -= -Math.sin(theta) * sideway;
 			break;
 		case "ArrowRight":
 			console.log('right-arrow.');
 			document.getElementById('KeyDownResult').innerHTML =
 				'myKeyDown():Right Arrow:keyCode='+kev.keyCode;
-			g_EyeX -= 0.1;
+			g_EyeX -= -Math.cos(theta) * sideway;
+			g_EyeY -= Math.sin(theta) * sideway;
 			break;
 		case "ArrowUp":
 			console.log('   up-arrow.');
