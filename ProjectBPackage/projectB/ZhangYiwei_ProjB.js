@@ -80,6 +80,7 @@ var floatsPerVertex = 7;	// # of Float32Array elements used for each vertex
 // (x,y,z,w)position + (r,g,b)color
 // Later, see if you can add:
 // (x,y,z) surface normal + (tx,ty) texture addr.
+var currentAngle = 0.0;
 
 var angle = 0;
 var g_angleRate01 = 60;
@@ -115,7 +116,6 @@ var move_y2 = 0;
 function main() {
 //==============================================================================
 	// Retrieve <canvas> element
-	var myCanvas = document.getElementById('webgl');
 	// Get the rendering context for WebGL
 	var myGL = getWebGLContext(g_canvas);
 	if (!myGL) {
@@ -184,15 +184,6 @@ function main() {
 		return;
 	}
 
-	// Specify the color for clearing <canvas>
-	gl.clearColor(0.0, 0.0, 0.0, 1.0);
-
-	// NEW!! Enable 3D depth-test when drawing: don't over-draw at any pixel
-	// unless the new Z value is closer to the eye than the old one..
-//	gl.depthFunc(gl.LESS);			 // WebGL default setting: (default)
-	gl.enable(gl.DEPTH_TEST);
-
-	// Get handle to graphics system's storage location of u_ModelMatrix
 	var u_ModelMatrix = gl.getUniformLocation(gl.program, 'u_ModelMatrix');
 	if (!u_ModelMatrix) {
 		console.log('Failed to get the storage location of u_ModelMatrix');
@@ -200,25 +191,8 @@ function main() {
 	}
 	// Create a local version of our model matrix in JavaScript
 	var modelMatrix = new Matrix4();
-	var viewMatrix = new Matrix4();
 
-
-	// store the view matrix and projection matrix
-	var u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
-	var u_ProjMatrix = gl.getUniformLocation(gl.program, 'u_ProjMatrix');
-
-	// Create, init current rotation angle value in JavaScript
-	var currentAngle = 0.0;
-	var currentAnglePivot = 80;
-
-	// Create the matrix to specify the viewing volume and pass it to u_ProjMatrix
-	var projMatrix = new Matrix4();
-	projMatrix.setOrtho(-1.0, 1.0, -1.0, 1.0, 0.0, 2.0);
-	gl.uniformMatrix4fv(u_ProjMatrix, false, projMatrix.elements);
-
-	drawTop(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);   // Draw shapes
-
-//-----------------
+	drawTwoView(gl, n, modelMatrix, u_ModelMatrix);
 
 	// Start drawing: create 'tick' variable whose value is this function:
 	var tick = function() {
@@ -226,12 +200,7 @@ function main() {
 		// animate2();
 		// animate3();
 		// animate4();
-		drawTop(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);   // Draw shapes
-		drawCube(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
-		drawPyramid(gl, n, currentAngle, u_ModelMatrix, u_ViewMatrix, viewMatrix);
-		drawCylinder(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
-		drawSphere(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
-		drawLine(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix);
+		drawTwoView(gl, n, modelMatrix, u_ModelMatrix);
 		// drawRobot(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
 		// report current angle on console
 		//console.log('currentAngle=',currentAngle);
@@ -246,6 +215,62 @@ function main() {
 		// Request that the browser re-draw the webpage
 	};
 	tick();							// start (and continue) animation: draw current image
+}
+
+function drawTwoView(gl, n, modelMatrix, u_ModelMatrix) {
+	// Specify the color for clearing <canvas>
+	gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+	// NEW!! Enable 3D depth-test when drawing: don't over-draw at any pixel
+	// unless the new Z value is closer to the eye than the old one..
+//	gl.depthFunc(gl.LESS);			 // WebGL default setting: (default)
+	gl.enable(gl.DEPTH_TEST);
+
+	// Get handle to graphics system's storage location of u_ModelMatrix
+	// var viewMatrix = new Matrix4();
+
+	// store the view matrix and projection matrix
+	// var u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
+
+	// Create, init current rotation angle value in JavaScript
+	var currentAnglePivot = 80;
+
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+	gl.viewport(0, 0, g_canvas.width / 2, g_canvas.height);
+	modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
+	modelMatrix.perspective(42.0,   // FOVY: top-to-bottom vertical image angle, in degrees
+		1.0,   // Image Aspect Ratio: camera lens width/height
+		1.0,   // camera z-near distance (always positive; frustum begins at z = -znear)
+		1000.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
+	console.log("parameters", g_EyeX, g_EyeY, g_EyeZ, theta);
+	modelMatrix.lookAt(g_EyeX, g_EyeY, g_EyeZ,     // center of projection
+		g_EyeX + Math.sin(theta), g_EyeY + Math.cos(theta), g_EyeZ + turn_height,      // look-at point
+		0.0, 0.0, 1.0);     // 'up' vector
+	drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
+
+	// ---------------------------- draw the second camera view
+	gl.viewport(g_canvas.width / 2, 0, g_canvas.width / 2, g_canvas.height);
+	modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
+	modelMatrix.perspective(42.0,   // FOVY: top-to-bottom vertical image angle, in degrees
+		1.0,   // Image Aspect Ratio: camera lens width/height
+		1.0,   // camera z-near distance (always positive; frustum begins at z = -znear)
+		1000.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
+	console.log("parameters", g_EyeX, g_EyeY, g_EyeZ, theta);
+	modelMatrix.lookAt(g_EyeX, g_EyeY, g_EyeZ,     // center of projection
+		g_EyeX + Math.sin(theta), g_EyeY + Math.cos(theta), g_EyeZ + turn_height,      // look-at point
+		0.0, 0.0, 1.0);     // 'up' vector
+
+	drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix); // Draw shapes
+}
+
+function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
+	drawTop(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
+	drawCube(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix);
+	drawPyramid(gl, n, currentAngle, u_ModelMatrix);
+	drawCylinder(gl, n, modelMatrix, u_ModelMatrix);
+	drawSphere(gl, n, modelMatrix, u_ModelMatrix);
+	drawLine(gl, n, modelMatrix, u_ModelMatrix);
 }
 
 
@@ -1331,24 +1356,11 @@ function makeGroundGrid() {
 	}
 }
 
-function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
+function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix) {
 //==============================================================================
 	// Clear <canvas>  colors AND the depth buffer
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-
 	// Pass the view projection matrix
-	gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
-
-	modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
-	modelMatrix.perspective(42.0,   // FOVY: top-to-bottom vertical image angle, in degrees
-		1.0,   // Image Aspect Ratio: camera lens width/height
-		1.0,   // camera z-near distance (always positive; frustum begins at z = -znear)
-		1000.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
-	console.log("parameters", g_EyeX, g_EyeY, g_EyeZ, theta);
-	modelMatrix.lookAt(g_EyeX, g_EyeY, g_EyeZ,     // center of projection
-		g_EyeX + Math.sin(theta), g_EyeY + Math.cos(theta), g_EyeZ + turn_height,      // look-at point
-		0.0,  0.0,  1.0);     // 'up' vector
-
+	// gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
 	//-------Draw Spinning Cylinder:
 	// save the previous modelMatrix for ground grid
 	pushMatrix(modelMatrix);
@@ -1588,7 +1600,7 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 		gndVerts.length/floatsPerVertex);	// draw this many vertices.
 }
 
-function drawCube(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
+function drawCube(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix) {
 	modelMatrix = popMatrix();
 	modelMatrix.translate(-2, -2, 0.5);
 	modelMatrix.scale(0.5, 0.5, 0.5);
@@ -1600,7 +1612,7 @@ function drawCube(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMa
 }
 
 
-function drawPyramid(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
+function drawPyramid(gl, n, modelMatrix, u_ModelMatrix) {
 	modelMatrix = popMatrix();
 	modelMatrix.translate(6, -2, 0);
 	modelMatrix.scale(1, 1, 1);
@@ -1611,7 +1623,7 @@ function drawPyramid(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix
 	pushMatrix(modelMatrix);
 }
 
-function drawCylinder(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
+function drawCylinder(gl, n, modelMatrix, u_ModelMatrix) {
 	modelMatrix = popMatrix();
 	modelMatrix.scale(0.8, 0.8, 0.3);
 	modelMatrix.translate(10, 8, -1);  // 'set' means DISCARD old matrix,
@@ -1622,7 +1634,7 @@ function drawCylinder(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatri
 	gl.drawArrays(gl.TRIANGLE_STRIP, RodStart3/floatsPerVertex, rodVerts.length/floatsPerVertex);
 }
 
-function drawLine(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
+function drawLine(gl, n, modelMatrix, u_ModelMatrix) {
 	modelMatrix = popMatrix();
 	modelMatrix.scale(2, 2, 2);
 	modelMatrix.translate(-2.3, -2.7, 0.5);  // 'set' means DISCARD old matrix,
@@ -1637,7 +1649,7 @@ function drawLine(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
 	gl.drawArrays(gl.LINES,lineStart/floatsPerVertex,lineColors.length/floatsPerVertex);				// start at vertex #12; draw 6 vertices
 }
 
-function drawSphere(gl, n, modelMatrix, u_ModelMatrix, u_ViewMatrix, viewMatrix) {
+function drawSphere(gl, n, modelMatrix, u_ModelMatrix) {
 	modelMatrix = popMatrix();
 	modelMatrix.scale(0.3, 0.3, 0.3);
 	modelMatrix.translate(3, -4, 1);  // 'set' means DISCARD old matrix,
