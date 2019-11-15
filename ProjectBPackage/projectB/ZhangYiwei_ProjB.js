@@ -240,7 +240,7 @@ function drawResize(gl, n, modelMatrix, u_ModelMatrix) {
 
 	//Make canvas fill the top 3/4 of our browser window:
 	nuCanvas.width = innerWidth;
-	nuCanvas.height = innerHeight*3/4;
+	nuCanvas.height = innerHeight*4/5;
 
 
 	// IMPORTANT!  Need a fresh drawing in the re-sized viewports.
@@ -269,7 +269,7 @@ function drawTwoView(gl, n, modelMatrix, u_ModelMatrix) {
 
 	gl.viewport(0, 0, g_canvas.width / 2, g_canvas.height);
 	modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
-	modelMatrix.perspective(42.0,   // FOVY: top-to-bottom vertical image angle, in degrees
+	modelMatrix.perspective(40.0,   // FOVY: top-to-bottom vertical image angle, in degrees
 		1.0,   // Image Aspect Ratio: camera lens width/height
 		1.0,   // camera z-near distance (always positive; frustum begins at z = -znear)
 		1000.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
@@ -282,10 +282,7 @@ function drawTwoView(gl, n, modelMatrix, u_ModelMatrix) {
 	// ---------------------------- draw the second camera view
 	gl.viewport(g_canvas.width / 2, 0, g_canvas.width / 2, g_canvas.height);
 	modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
-	modelMatrix.perspective(42.0,   // FOVY: top-to-bottom vertical image angle, in degrees
-		1.0,   // Image Aspect Ratio: camera lens width/height
-		1.0,   // camera z-near distance (always positive; frustum begins at z = -znear)
-		1000.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
+	modelMatrix.ortho(-12, 12, -12, 12, 1, 1000);
 	console.log("parameters", g_EyeX, g_EyeY, g_EyeZ, theta);
 	modelMatrix.lookAt(g_EyeX, g_EyeY, g_EyeZ,     // center of projection
 		g_EyeX + Math.sin(theta), g_EyeY + Math.cos(theta), g_EyeZ + turn_height,      // look-at point
