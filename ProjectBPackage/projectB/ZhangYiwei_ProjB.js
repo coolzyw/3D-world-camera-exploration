@@ -192,7 +192,13 @@ function main() {
 	// Create a local version of our model matrix in JavaScript
 	var modelMatrix = new Matrix4();
 
-	drawTwoView(gl, n, modelMatrix, u_ModelMatrix);
+	// NEW! -- make new canvas to fit the browser-window size;
+	drawResize(gl, n, modelMatrix, u_ModelMatrix);   // On this first call, Chrome browser seems to use the
+	// initial fixed canvas size we set in the HTML file;
+	// But by default Chrome opens its browser at the same
+	// size & location where you last closed it, so
+	drawResize(gl, n, modelMatrix, u_ModelMatrix);   // Call drawResize() a SECOND time to re-size canvas to
+	// match the current browser size.
 
 	// Start drawing: create 'tick' variable whose value is this function:
 	var tick = function() {
@@ -200,7 +206,7 @@ function main() {
 		// animate2();
 		// animate3();
 		// animate4();
-		drawTwoView(gl, n, modelMatrix, u_ModelMatrix);
+		drawResize(gl, n, modelMatrix, u_ModelMatrix);
 		// drawRobot(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
 		// report current angle on console
 		//console.log('currentAngle=',currentAngle);
@@ -215,6 +221,30 @@ function main() {
 		// Request that the browser re-draw the webpage
 	};
 	tick();							// start (and continue) animation: draw current image
+}
+
+function drawResize(gl, n, modelMatrix, u_ModelMatrix) {
+//==============================================================================
+// Called when user re-sizes their browser window , because our HTML file
+// contains:  <body onload="main()" onresize="winResize()">
+
+	var nuCanvas = document.getElementById('webgl');	// get current canvas
+	var nuGL = getWebGLContext(nuCanvas);							// and context:
+
+	//Report our current browser-window contents:
+
+	console.log('nuCanvas width,height=', nuCanvas.width, nuCanvas.height);
+	console.log('Browser window: innerWidth,innerHeight=',
+		innerWidth, innerHeight);	// http://www.w3schools.com/jsref/obj_window.asp
+
+
+	//Make canvas fill the top 3/4 of our browser window:
+	nuCanvas.width = innerWidth;
+	nuCanvas.height = innerHeight*3/4;
+
+
+	// IMPORTANT!  Need a fresh drawing in the re-sized viewports.
+	drawTwoView(gl, n, modelMatrix, u_ModelMatrix);
 }
 
 function drawTwoView(gl, n, modelMatrix, u_ModelMatrix) {
@@ -260,7 +290,6 @@ function drawTwoView(gl, n, modelMatrix, u_ModelMatrix) {
 	modelMatrix.lookAt(g_EyeX, g_EyeY, g_EyeZ,     // center of projection
 		g_EyeX + Math.sin(theta), g_EyeY + Math.cos(theta), g_EyeZ + turn_height,      // look-at point
 		0.0, 0.0, 1.0);     // 'up' vector
-
 	drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix); // Draw shapes
 }
 
