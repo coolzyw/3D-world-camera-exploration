@@ -267,12 +267,13 @@ function drawTwoView(gl, n, modelMatrix, u_ModelMatrix) {
 
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
+	var ratio = (innerWidth / 2) / innerHeight;
 	gl.viewport(0, 0, g_canvas.width / 2, g_canvas.height);
 	modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
 	modelMatrix.perspective(40.0,   // FOVY: top-to-bottom vertical image angle, in degrees
-		1.0,   // Image Aspect Ratio: camera lens width/height
+		ratio,   // Image Aspect Ratio: camera lens width/height width/height = (right-left) / (top-bottom) = right/top
 		1.0,   // camera z-near distance (always positive; frustum begins at z = -znear)
-		1000.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
+		100.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
 	console.log("parameters", g_EyeX, g_EyeY, g_EyeZ, theta);
 	modelMatrix.lookAt(g_EyeX, g_EyeY, g_EyeZ,     // center of projection
 		g_EyeX + Math.sin(theta), g_EyeY + Math.cos(theta), g_EyeZ + turn_height,      // look-at point
@@ -280,9 +281,13 @@ function drawTwoView(gl, n, modelMatrix, u_ModelMatrix) {
 	drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
 
 	// ---------------------------- draw the second camera view
+	var nearHeight = Math.tan(20 * 3.14 / 180);
+	console.log("height", nearHeight);
+	var nearWidth = ratio * nearHeight;
+	var scale = 13;
 	gl.viewport(g_canvas.width / 2, 0, g_canvas.width / 2, g_canvas.height);
 	modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
-	modelMatrix.ortho(-12, 12, -12, 12, 1, 1000);
+	modelMatrix.ortho(-nearWidth * scale, nearWidth * scale, -nearHeight * scale, nearHeight * scale, 1, 100);
 	console.log("parameters", g_EyeX, g_EyeY, g_EyeZ, theta);
 	modelMatrix.lookAt(g_EyeX, g_EyeY, g_EyeZ,     // center of projection
 		g_EyeX + Math.sin(theta), g_EyeY + Math.cos(theta), g_EyeZ + turn_height,      // look-at point
