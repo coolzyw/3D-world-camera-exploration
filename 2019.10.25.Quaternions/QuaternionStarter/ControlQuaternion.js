@@ -88,7 +88,7 @@ function main() {
   					// when user's mouse button goes down, call mouseDown() function
   canvas.onmousemove = 	function(ev){myMouseMove( ev, gl, canvas) };
 											// when the mouse moves, call mouseMove() function					
-  canvas.onmouseup = 		function(ev){myMouseUp(   ev, gl, canvas)};
+  canvas.onmouseup = function(ev){myMouseUp(   ev, gl, canvas)};
   					// NOTE! 'onclick' event is SAME as on 'mouseup' event
   					// in Chrome Brower on MS Windows 7, and possibly other 
   					// operating systems; thus I use 'mouseup' instead.
@@ -326,10 +326,10 @@ function draw(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 	// Drawing:
 	// Use the current ModelMatrix to transform & draw something new from our VBO:
   gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-  // Draw the last 2 faces of our tetrahedron: starting at vertex #6,
+  // Draw the last 2 faces of our tetrahedron: starting at vertex #6,x
   // draw the next 6 vertices using the 'gl.TRIANGLES' drawing primitive
   gl.drawArrays(gl.TRIANGLES, 6,6);
-  // Next, use the gl.LINES drawing primitive on vertices 12 thru 18 to 
+  // Next, use the gl.LINES drawing primitive on vertices 12 thru 18 to
   // depict our current 'drawing axes' onscreen:
   gl.drawArrays(gl.LINES,12,6);				// start at vertex #12; draw 6 vertices
 

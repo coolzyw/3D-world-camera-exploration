@@ -64,12 +64,19 @@
     <button type="button" onClick='clearDrag()'>Clear</button>
 	<!--	Load in the JavaScript libraries supplied by our textbook
 			(Matsuda et al., 2013 WebGL Programming Guide) that help us
-			with WebGL programming:
+			with WebGL programming
 	-->
+    <br>
+    Current Quaternion: w + xi + yj + zk where (i,j,k) are 3-way imaginary numbers:
+    <div id=QuatValue>  X=0i, Y=0j, Z=0k, W=1.
+      <br> length=1.
+    </div>
+    <button type="button" onClick="resetQuat()">Reset</button>
     <script src="../lib/webgl-utils.js"></script>
     <script src="../lib/webgl-debug.js"></script>
     <script src="../lib/cuon-utils.js"></script>
     <script src="../lib/cuon-matrix-mod.js"></script>
+    <script src="../lib/cuon-matrix-quat03.js"></script>
 	<!--	Finally, load in our own JavaScript program file.
 	-->
     <script src="ZhangYiwei_ProjB.js"></script>
