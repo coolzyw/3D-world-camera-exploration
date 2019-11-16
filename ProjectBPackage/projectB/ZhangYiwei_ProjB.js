@@ -1960,7 +1960,7 @@ function drawRobot(gl, n, modelMatrix, u_ModelMatrix) {
 	gl.drawArrays(gl.TRIANGLES, armStart/floatsPerVertex, armVerts.length/floatsPerVertex);
 
 	// ------------------------ draw hand ----------------------------------
-	modelMatrix.translate(0.5, 0, -2);
+	modelMatrix.translate(0.2, 0, -2);
 	modelMatrix.rotate(-100, 0, 1, 0);
 	modelMatrix.rotate(-g_angle03 - 10, 0, 1, 0);
 	modelMatrix.scale(1, 1, 0.5);
@@ -1982,6 +1982,15 @@ function drawRobot(gl, n, modelMatrix, u_ModelMatrix) {
 	modelMatrix.rotate(30, 0, 1, 0);
 	modelMatrix.translate(0, 0, 2);
 	modelMatrix.rotate(g_angle03 - 60, 0, 1, 0);
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	// Draw just the first set of vertices: start at vertex SHAPE_0_SIZE
+	gl.drawArrays(gl.TRIANGLES, armStart/floatsPerVertex, armVerts.length/floatsPerVertex);
+
+	// ------------------------ draw upper hand 2 --------------------------
+	modelMatrix.translate(0.1, 0, 2);
+	modelMatrix.rotate(120, 0, 1, 0);
+	modelMatrix.rotate(g_angle03 - 10, 0, 1, 0);
+	modelMatrix.scale(1, 1, 0.5);
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 	// Draw just the first set of vertices: start at vertex SHAPE_0_SIZE
 	gl.drawArrays(gl.TRIANGLES, armStart/floatsPerVertex, armVerts.length/floatsPerVertex);
