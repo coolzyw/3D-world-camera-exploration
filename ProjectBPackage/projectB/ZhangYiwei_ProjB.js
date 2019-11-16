@@ -1896,7 +1896,7 @@ function drawRobot(gl, n, modelMatrix, u_ModelMatrix) {
 	// convert to left-handed coord sys
 	modelMatrix.translate(-2, -3, 1);
 	modelMatrix.rotate(90, 1, 0, 0);;
-	modelMatrix.scale(2, 2, 2);
+	modelMatrix.scale(3, 3, 3);
 	modelMatrix.translate(move_x2, move_y2, 0);
 	modelMatrix.rotate(g_angle04, 0, 1, 0);
 	modelMatrix.rotate(g_angle02, 1, 0, 1);  // Spin on XY diagonal axis
@@ -1960,11 +1960,13 @@ function drawRobot(gl, n, modelMatrix, u_ModelMatrix) {
 	gl.drawArrays(gl.TRIANGLES, armStart/floatsPerVertex, armVerts.length/floatsPerVertex);
 
 	// ------------------------ draw hand ----------------------------------
-	// modelMatrix.translate(-0.8, 0, -1);
-	// modelMatrix.rotate(g_angle03 - 10, 0, 1, 0);
-	// gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
-	// // Draw just the first set of vertices: start at vertex SHAPE_0_SIZE
-	// gl.drawArrays(gl.TRIANGLES, armStart/floatsPerVertex, armVerts.length/floatsPerVertex);
+	modelMatrix.translate(0.5, 0, -2);
+	modelMatrix.rotate(-100, 0, 1, 0);
+	modelMatrix.rotate(-g_angle03 - 10, 0, 1, 0);
+	modelMatrix.scale(1, 1, 0.5);
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	// Draw just the first set of vertices: start at vertex SHAPE_0_SIZE
+	gl.drawArrays(gl.TRIANGLES, armStart/floatsPerVertex, armVerts.length/floatsPerVertex);
 
 	// ------------------------ draw arm 2 ------------------------------------
 	// NEXT, create different drawing axes, and...
