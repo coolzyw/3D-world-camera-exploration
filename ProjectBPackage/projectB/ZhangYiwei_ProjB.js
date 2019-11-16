@@ -1830,16 +1830,21 @@ function drawCube(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMa
 function drawPyramid(gl, n, modelMatrix, u_ModelMatrix) {
 	modelMatrix = popMatrix();
 	pushMatrix(modelMatrix);
-	modelMatrix.translate(1, 2, 0);
+	modelMatrix.translate(1, 2, 1.5);
 	modelMatrix.translate(pyramid_x, pyramid_y, 0);
 	modelMatrix.scale(2, 2, 2);
-	modelMatrix.rotate(60, 0, 0, 1);
+	modelMatrix.rotate(90, 1, 0, 0);
 	quatMatrix.setFromQuat(qTot.x, qTot.y, qTot.z, qTot.w);	// Quaternion-->Matrix
 	modelMatrix.concat(quatMatrix);	// apply that matrix.
 
+	pushMatrix(modelMatrix);
+	modelMatrix.scale(1.2,1.2,1.2);
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 	// Draw just the first set of vertices: start at vertex SHAPE_0_SIZE
 	gl.drawArrays(gl.LINES,lineStart/floatsPerVertex,lineColors.length/floatsPerVertex);
+
+	modelMatrix = popMatrix();
+	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 	gl.drawArrays(gl.TRIANGLES, pyramidStart/floatsPerVertex, pyramidShapes.length/floatsPerVertex);
 }
 
@@ -1947,12 +1952,19 @@ function drawRobot(gl, n, modelMatrix, u_ModelMatrix) {
 	gl.drawArrays(gl.TRIANGLES, armStart/floatsPerVertex, armVerts.length/floatsPerVertex);
 
 	// ------------------------ draw upper arm 1 ---------------------------
-	modelMatrix.rotate(30, 0, 1, 0);
-	modelMatrix.translate(-0.8, 0, -1);
-	modelMatrix.rotate(g_angle03 - 10, 0, 1, 0);
+	modelMatrix.translate(1, 0, -1.8);
+	modelMatrix.rotate(50, 0, 1, 0);
+	modelMatrix.rotate(-g_angle03 - 10, 0, 1, 0);
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 	// Draw just the first set of vertices: start at vertex SHAPE_0_SIZE
 	gl.drawArrays(gl.TRIANGLES, armStart/floatsPerVertex, armVerts.length/floatsPerVertex);
+
+	// ------------------------ draw hand ----------------------------------
+	// modelMatrix.translate(-0.8, 0, -1);
+	// modelMatrix.rotate(g_angle03 - 10, 0, 1, 0);
+	// gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
+	// // Draw just the first set of vertices: start at vertex SHAPE_0_SIZE
+	// gl.drawArrays(gl.TRIANGLES, armStart/floatsPerVertex, armVerts.length/floatsPerVertex);
 
 	// ------------------------ draw arm 2 ------------------------------------
 	// NEXT, create different drawing axes, and...
