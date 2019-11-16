@@ -246,9 +246,9 @@ function drawResize(gl, n, modelMatrix, u_ModelMatrix) {
 
 	//Report our current browser-window contents:
 
-	console.log('nuCanvas width,height=', nuCanvas.width, nuCanvas.height);
-	console.log('Browser window: innerWidth,innerHeight=',
-		innerWidth, innerHeight);	// http://www.w3schools.com/jsref/obj_window.asp
+	// console.log('nuCanvas width,height=', nuCanvas.width, nuCanvas.height);
+	// console.log('Browser window: innerWidth,innerHeight=',
+	// 	innerWidth, innerHeight);	// http://www.w3schools.com/jsref/obj_window.asp
 
 
 	//Make canvas fill the top 3/4 of our browser window:
@@ -287,7 +287,7 @@ function drawTwoView(gl, n, modelMatrix, u_ModelMatrix) {
 		ratio,   // Image Aspect Ratio: camera lens width/height width/height = (right-left) / (top-bottom) = right/top
 		1.0,   // camera z-near distance (always positive; frustum begins at z = -znear)
 		100.0);  // camera z-far distance (always positive; frustum ends at z = -zfar)
-	console.log("parameters", g_EyeX, g_EyeY, g_EyeZ, theta);
+	// console.log("parameters", g_EyeX, g_EyeY, g_EyeZ, theta);
 	modelMatrix.lookAt(g_EyeX, g_EyeY, g_EyeZ,     // center of projection
 		g_EyeX + Math.sin(theta), g_EyeY + Math.cos(theta), g_EyeZ + turn_height,      // look-at point
 		0.0, 0.0, 1.0);     // 'up' vector
@@ -295,13 +295,13 @@ function drawTwoView(gl, n, modelMatrix, u_ModelMatrix) {
 
 	// ---------------------------- draw the second camera view
 	var nearHeight = Math.tan(20 * 3.14 / 180);
-	console.log("height", nearHeight);
+	// console.log("height", nearHeight);
 	var nearWidth = ratio * nearHeight;
 	var scale = 13;
 	gl.viewport(g_canvas.width / 2, 0, g_canvas.width / 2, g_canvas.height);
 	modelMatrix.setIdentity();    // DEFINE 'world-space' coords.
 	modelMatrix.ortho(-nearWidth * scale, nearWidth * scale, -nearHeight * scale, nearHeight * scale, 1, 100);
-	console.log("parameters", g_EyeX, g_EyeY, g_EyeZ, theta);
+	// console.log("parameters", g_EyeX, g_EyeY, g_EyeZ, theta);
 	modelMatrix.lookAt(g_EyeX, g_EyeY, g_EyeZ,     // center of projection
 		g_EyeX + Math.sin(theta), g_EyeY + Math.cos(theta), g_EyeZ + turn_height,      // look-at point
 		0.0, 0.0, 1.0);     // 'up' vector
@@ -399,7 +399,7 @@ function myMouseUp(ev, gl, canvas) {
 		(canvas.width/2);			// normalize canvas to -1 <= x < +1,
 	var y = (yp - canvas.height/2) /		//										 -1 <= y < +1.
 		(canvas.height/2);
-//	console.log('myMouseUp  (CVV coords  ):  x, y=\t',x,',\t',y);
+	console.log('myMouseUp  (CVV coords  ):  x, y=\t',x,',\t',y);
 
 	isDrag = false;											// CLEAR our mouse-dragging flag, and
 	// accumulate any final bit of mouse-dragging we did:
@@ -411,10 +411,10 @@ function myMouseUp(ev, gl, canvas) {
 	dragQuat(x - xMclik, y - yMclik);
 
 	// Show it on our webpage, in the <div> element named 'MouseText':
-	document.getElementById('MouseText').innerHTML=
-		'Mouse Drag totals (CVV x,y coords):\t'+
-		xMdragTot.toFixed(5)+', \t'+
-		yMdragTot.toFixed(5);
+	// document.getElementById('MouseText').innerHTML=
+	// 	'Mouse Drag totals (CVV x,y coords):\t'+
+	// 	xMdragTot.toFixed(5)+', \t'+
+	// 	yMdragTot.toFixed(5);
 };
 
 function dragQuat(xdrag, ydrag) {
@@ -431,7 +431,14 @@ function dragQuat(xdrag, ydrag) {
 
 	var dist = Math.sqrt(xdrag*xdrag + ydrag*ydrag);
 	// console.log('xdrag,ydrag=',xdrag.toFixed(5),ydrag.toFixed(5),'dist=',dist.toFixed(5));
-	qNew.setFromAxisAngle(-ydrag + 0.0001, xdrag + 0.0001, 0.0, dist*150.0);
+	// a = (Math.sin(theta), Math.cos(theta), turn_height)
+	// b = (x_drag, y_drag, 0)
+	var cross1 = -turn_height * Math.cos(theta) * xdrag;
+	var cross2 = turn_height * Math.sin(theta) * ydrag;
+	var cross3 = Math.sin(theta) * ydrag - Math.cos(theta) * xdrag;
+
+	// qNew.setFromAxisAngle(ydrag * Math.sin(theta) + 0.0001, xdrag * Math.cos(theta) + 0.0001, 0.0, dist*150.0);
+	qNew.setFromAxisAngle(cross1 + 0.0001, cross2 + 0.0001, cross3, dist*150.0);
 	// (why add tiny 0.0001? To ensure we never have a zero-length rotation axis)
 	// why axis (x,y,z) = (-yMdrag,+xMdrag,0)?
 	// -- to rotate around +x axis, drag mouse in -y direction.
