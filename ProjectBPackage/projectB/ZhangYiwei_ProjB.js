@@ -57,7 +57,7 @@ var FSHADER_SOURCE =
 	'}\n';
 
 // --------------------- Eye positions -----------------------------------
-var g_EyeX = -0.5, g_EyeY = 8.6, g_EyeZ = 2; // Eye position
+var g_EyeX = -0.5, g_EyeY = 8.6, g_EyeZ = 1; // Eye position
 var forward = 0.5;
 var sideway = 0.3;
 var theta = -3.14;
@@ -109,7 +109,7 @@ var move_x2 = 0;
 var move_y2 = 0;
 
 // ---------------- for pyramid location ----------------------------
-var pyramid_x = 8;
+var pyramid_x = 2;
 var pyramid_y = -2;
 
 // ----------------- variable for quarternion ------------------------
@@ -119,8 +119,8 @@ var yMclik=0.0;
 var xMdragTot=0.0;	// total (accumulated) mouse-drag amounts (in CVV coords).
 var yMdragTot=0.0;
 
-var qNew = new Quaternion(0,0,0,1); // most-recent mouse drag's rotation
 var qTot = new Quaternion(0,0,0,1);	// 'current' orientation (made from qNew)
+var qNew = new Quaternion(0,0,0,1);	// 'current' orientation (made from qNew)
 var quatMatrix = new Matrix4();				// rotation matrix, made from latest qTot
 
 function main() {
@@ -429,28 +429,32 @@ function dragQuat(xdrag, ydrag) {
 // rotation stored in quaternion 'qTot' by quaternion multiply.  Note the
 // 'draw()' function converts this current 'qTot' quaternion to a rotation
 // matrix for drawing.
+
 	var res = 5;
 	var qTmp = new Quaternion(0,0,0,1);
 
 	// distance vector
 	var dist_x = g_EyeX - pyramid_x;
 	var dist_y = g_EyeY - pyramid_y;
-	var dist_z = g_EyeZ - turn_height;
+	var dist_z = g_EyeZ;
+	console.log(dist_x, dist_y, dist_z);
 	// * (0, 0, 1)
 	var dist = Math.sqrt(xdrag*xdrag + ydrag*ydrag);
 	// console.log('xdrag,ydrag=',xdrag.toFixed(5),ydrag.toFixed(5),'dist=',dist.toFixed(5));
 	// a = (Math.sin(theta), Math.cos(theta), turn_height)
 	// b = (x_drag, y_drag, 0)
 	var x_1 = -dist_y;
-	var y_1 = -dist_x;
+	var y_1 = dist_x;
 	var z_1 = 0;
 
-	var x_2 = 0;
-	var y_2 = 0;
-	var z_3 = 1;
+	var x_2 = dist_z * dist_x;
+	var y_2 = dist_z * dist_y;
+	var z_2 = -dist_x * dist_x;
 
-	// qNew.setFromAxisAngle(ydrag * Math.sin(theta) + 0.0001, xdrag * Math.cos(theta) + 0.0001, 0.0, dist*150.0);
-	qNew.setFromAxisAngle(x_1 + 0.0001, y_1 + 0.0001, 0, dist*150.0);
+	// var quarternion1 = new Quaternion(0,0,0,1); // most-recent mouse drag's rotation
+	// var quarternion2 = new Quaternion(0, 0, 0, 1);
+	qNew.setFromAxisAngle(-ydrag + 0.0001, xdrag + 0.0001, 0, dist*150.0);
+	// qNew.setFromAxisAngle(x_1 + 0.0001, y_1 + 0.0001, 0, dist*150.0);
 	// (why add tiny 0.0001? To ensure we never have a zero-length rotation axis)
 	// why axis (x,y,z) = (-yMdrag,+xMdrag,0)?
 	// -- to rotate around +x axis, drag mouse in -y direction.
@@ -471,7 +475,7 @@ function dragQuat(xdrag, ydrag) {
 	// may drift away from 1.0 if we repeat this quaternion multiply many times.
 	// A non-unit-length quaternion won't work with our quaternion-to-matrix fcn.
 	// Matrix4.prototype.setFromQuat().
-	qTmp.normalize();						// normalize to ensure we stay at length==1.0.
+	qTot.normalize();						// normalize to ensure we stay at length==1.0.
 	qTot.copy(qTmp);
 	// show the new quaternion qTot on our webpage in the <div> element 'QuatValue'
 	document.getElementById('QuatValue').innerHTML=
@@ -1828,7 +1832,6 @@ function drawPyramid(gl, n, modelMatrix, u_ModelMatrix) {
 	modelMatrix.translate(pyramid_x, pyramid_y, 0);
 	modelMatrix.scale(2, 2, 2);
 	modelMatrix.rotate(60, 0, 0, 1);
-
 	quatMatrix.setFromQuat(qTot.x, qTot.y, qTot.z, qTot.w);	// Quaternion-->Matrix
 	modelMatrix.concat(quatMatrix);	// apply that matrix.
 
@@ -2332,6 +2335,12 @@ function myKeyDown(kev) {
 			document.getElementById('KeyDownResult').innerHTML =
 				'myKeyDown() found d/D key. Strafe RIGHT!';
 			turn_height += 0.03;
+			break;
+		case "KeyH":
+			g_EyeZ += 0.1;
+			break;
+		case "KeyG":
+			g_EyeZ -= 0.1;
 			break;
 		// case "KeyS":
 		// 	console.log("s/S key: Move BACK!\n");
