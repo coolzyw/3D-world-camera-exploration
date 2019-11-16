@@ -1818,7 +1818,7 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 function drawCube(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix) {
 	modelMatrix = popMatrix();
 	pushMatrix(modelMatrix);
-	modelMatrix.translate(2, 2, 0.5);
+	modelMatrix.translate(-2, 3, 0.5);
 	modelMatrix.scale(0.5, 0.5, 0.5);
 	modelMatrix.rotate(g_angle03, 0, 0, 1);
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
@@ -1830,6 +1830,7 @@ function drawCube(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMa
 function drawPyramid(gl, n, modelMatrix, u_ModelMatrix) {
 	modelMatrix = popMatrix();
 	pushMatrix(modelMatrix);
+	modelMatrix.translate(1, 2, 0);
 	modelMatrix.translate(pyramid_x, pyramid_y, 0);
 	modelMatrix.scale(2, 2, 2);
 	modelMatrix.rotate(60, 0, 0, 1);
@@ -1846,7 +1847,7 @@ function drawCylinder(gl, n, modelMatrix, u_ModelMatrix) {
 	modelMatrix = popMatrix();
 	pushMatrix(modelMatrix);
 	modelMatrix.scale(0.8, 0.8, 0.3);
-	modelMatrix.translate(10, 8, -1);  // 'set' means DISCARD old matrix,
+	modelMatrix.translate(-2, -15, -1);  // 'set' means DISCARD old matrix,
 	// convert to left-handed coord sys
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
 	// Draw just the first set of vertices: start at vertex SHAPE_0_SIZE
@@ -1873,7 +1874,7 @@ function drawSphere(gl, n, modelMatrix, u_ModelMatrix) {
 	modelMatrix = popMatrix();
 	pushMatrix(modelMatrix);
 	modelMatrix.scale(0.3, 0.3, 0.3);
-	modelMatrix.translate(3, -4, 1);  // 'set' means DISCARD old matrix,
+	modelMatrix.translate(3, 6, 1);  // 'set' means DISCARD old matrix,
 	modelMatrix.rotate(g_angle03, 0, 0, 1);
 	// convert to left-handed coord sys
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
