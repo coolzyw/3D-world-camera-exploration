@@ -2146,12 +2146,15 @@ function runStop2() {
 	if(g_angleRate02 * g_angleRate02 > 1) {
 		g_angleRateTmp2 = g_angleRate02;
 		g_angleRateTmp3 = g_angleRate03;
+		g_angleRateTmp4 = g_angleRate04;
 		g_angleRate02 = 0;
 		g_angleRate03 = 0;
+		g_angleRate04 = 0;
 	}
 	else {
 		g_angleRate02 = g_angleRateTmp2;
 		g_angleRate03 = g_angleRateTmp3;
+		g_angleRate04 = g_angleRateTmp4;
 	}
 }
 
