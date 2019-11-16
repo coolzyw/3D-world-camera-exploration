@@ -2373,6 +2373,12 @@ function myKeyDown(kev) {
 		case "KeyG":
 			g_EyeZ -= 0.1;
 			break;
+		case "KeyJ":
+			g_angleRate04 -= 5;
+			break;
+		case "KeyK":
+			g_angleRate04 += 5;
+			break;
 		// case "KeyS":
 		// 	console.log("s/S key: Move BACK!\n");
 		// 	document.getElementById('KeyDownResult').innerHTML =
