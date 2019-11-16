@@ -219,9 +219,9 @@ function main() {
 	// Start drawing: create 'tick' variable whose value is this function:
 	var tick = function() {
 		currentAngle = animate(currentAngle);  // Update the rotation angle
-		// animate2();
-		// animate3();
-		// animate4();
+		animate2();
+		animate3();
+		animate4();
 		drawResize(gl, n, modelMatrix, u_ModelMatrix);
 		// drawRobot(gl, n, currentAngle, 2 * currentAngle, modelMatrix, u_ModelMatrix);   // Draw shapes
 		// report current angle on console
@@ -318,6 +318,7 @@ function drawAll(gl, n, currentAngle, modelMatrix, u_ModelMatrix) {
 	drawCylinder(gl, n, modelMatrix, u_ModelMatrix);
 	drawSphere(gl, n, modelMatrix, u_ModelMatrix);
 	drawLine(gl, n, modelMatrix, u_ModelMatrix);
+	drawRobot(gl, n, modelMatrix, u_ModelMatrix);
 }
 
 
@@ -1817,7 +1818,7 @@ function drawTop(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMat
 function drawCube(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix) {
 	modelMatrix = popMatrix();
 	pushMatrix(modelMatrix);
-	modelMatrix.translate(-2, -2, 0.5);
+	modelMatrix.translate(2, 2, 0.5);
 	modelMatrix.scale(0.5, 0.5, 0.5);
 	modelMatrix.rotate(g_angle03, 0, 0, 1);
 	gl.uniformMatrix4fv(u_ModelMatrix, false, modelMatrix.elements);
@@ -1856,7 +1857,7 @@ function drawLine(gl, n, modelMatrix, u_ModelMatrix) {
 	modelMatrix = popMatrix();
 	pushMatrix(modelMatrix);
 	modelMatrix.scale(2, 2, 2);
-	modelMatrix.translate(-2.3, -2.7, 0.5);  // 'set' means DISCARD old matrix,
+	modelMatrix.translate(0, 0, 0.5);  // 'set' means DISCARD old matrix,
 	//-------------------------------
 	// Drawing:
 	// Use the current ModelMatrix to transform & draw something new from our VBO:
@@ -1880,13 +1881,16 @@ function drawSphere(gl, n, modelMatrix, u_ModelMatrix) {
 	gl.drawArrays(gl.TRIANGLE_STRIP, sphStart/floatsPerVertex, sphVerts.length/floatsPerVertex);
 }
 
-function drawRobot(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMatrix) {
+function drawRobot(gl, n, modelMatrix, u_ModelMatrix) {
 	// ------------------------ draw the second object ---------------------------
 	// ------------------------ draw the body ------------------------------------
 	// NEXT, create different drawing axes, and...
-
-	modelMatrix.setTranslate(0.3, 0.5, 0);  // 'set' means DISCARD old matrix,
+	modelMatrix = popMatrix();
+	pushMatrix(modelMatrix);
 	// convert to left-handed coord sys
+	modelMatrix.translate(-2, -3, 1);
+	modelMatrix.rotate(90, 1, 0, 0);;
+	modelMatrix.scale(2, 2, 2);
 	modelMatrix.translate(move_x2, move_y2, 0);
 	modelMatrix.rotate(g_angle04, 0, 1, 0);
 	modelMatrix.rotate(g_angle02, 1, 0, 1);  // Spin on XY diagonal axis
