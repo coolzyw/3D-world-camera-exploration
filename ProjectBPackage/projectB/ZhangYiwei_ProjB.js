@@ -108,6 +108,9 @@ var move_y = 0;
 var move_x2 = 0;
 var move_y2 = 0;
 
+// ---------------- for pyramid location ----------------------------
+var pyramid_x = 8;
+var pyramid_y = -2;
 
 // ----------------- variable for quarternion ------------------------
 var isDrag=false;		// mouse-drag: true when user holds down mouse button
@@ -429,16 +432,25 @@ function dragQuat(xdrag, ydrag) {
 	var res = 5;
 	var qTmp = new Quaternion(0,0,0,1);
 
+	// distance vector
+	var dist_x = g_EyeX - pyramid_x;
+	var dist_y = g_EyeY - pyramid_y;
+	var dist_z = g_EyeZ - turn_height;
+	// * (0, 0, 1)
 	var dist = Math.sqrt(xdrag*xdrag + ydrag*ydrag);
 	// console.log('xdrag,ydrag=',xdrag.toFixed(5),ydrag.toFixed(5),'dist=',dist.toFixed(5));
 	// a = (Math.sin(theta), Math.cos(theta), turn_height)
 	// b = (x_drag, y_drag, 0)
-	var cross1 = -turn_height * Math.cos(theta) * xdrag;
-	var cross2 = turn_height * Math.sin(theta) * ydrag;
-	var cross3 = Math.sin(theta) * ydrag - Math.cos(theta) * xdrag;
+	var x_1 = -dist_y;
+	var y_1 = -dist_x;
+	var z_1 = 0;
+
+	var x_2 = 0;
+	var y_2 = 0;
+	var z_3 = 1;
 
 	// qNew.setFromAxisAngle(ydrag * Math.sin(theta) + 0.0001, xdrag * Math.cos(theta) + 0.0001, 0.0, dist*150.0);
-	qNew.setFromAxisAngle(cross1 + 0.0001, cross2 + 0.0001, cross3, dist*150.0);
+	qNew.setFromAxisAngle(x_1 + 0.0001, y_1 + 0.0001, 0, dist*150.0);
 	// (why add tiny 0.0001? To ensure we never have a zero-length rotation axis)
 	// why axis (x,y,z) = (-yMdrag,+xMdrag,0)?
 	// -- to rotate around +x axis, drag mouse in -y direction.
@@ -459,7 +471,7 @@ function dragQuat(xdrag, ydrag) {
 	// may drift away from 1.0 if we repeat this quaternion multiply many times.
 	// A non-unit-length quaternion won't work with our quaternion-to-matrix fcn.
 	// Matrix4.prototype.setFromQuat().
-//	qTmp.normalize();						// normalize to ensure we stay at length==1.0.
+	qTmp.normalize();						// normalize to ensure we stay at length==1.0.
 	qTot.copy(qTmp);
 	// show the new quaternion qTot on our webpage in the <div> element 'QuatValue'
 	document.getElementById('QuatValue').innerHTML=
@@ -1813,7 +1825,7 @@ function drawCube(gl, n, currentAngle, currentPivotAngle, modelMatrix, u_ModelMa
 function drawPyramid(gl, n, modelMatrix, u_ModelMatrix) {
 	modelMatrix = popMatrix();
 	pushMatrix(modelMatrix);
-	modelMatrix.translate(8, -2, 0);
+	modelMatrix.translate(pyramid_x, pyramid_y, 0);
 	modelMatrix.scale(2, 2, 2);
 	modelMatrix.rotate(60, 0, 0, 1);
 
