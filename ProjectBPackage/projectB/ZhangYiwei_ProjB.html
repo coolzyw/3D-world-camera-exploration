@@ -19,33 +19,32 @@
 		When users click the button, HTML calls JavaScript functions
 			"spinDown()", "runStop()" and "spinUp()"   -->
 <!--    <div style="float: left; margin-left: 15px;">-->
-<!--    <h2 style="color: darkmagenta"> CS351 Project 1: Colorful Spinning Top and walking Robot</h2>-->
-<!--    <h4 style="color: grey"> Author: Yiwei Zhang MSCS2019. Starter code provided by Professor Jack Thumblin </h4>-->
-<!--        <h3 style="color: deeppink"> Please don't switch browser while playing this demo. </h3>-->
-<!--        <h3 style="color: deeppink">If some parts begin dissembble, please refresh the browser again :-)</h3>-->
-<!--    <h3 style="color: coral"> Instructions! Wow </h3>-->
-<!--    <h3> 1. Use mouse drag to move the Top! </h3>-->
-<!--    <h3> 2. Use keyboard left, right, up, down to move the Robot! </h3>-->
-<!--    <h3> 3. Press P to stop/start both objects! </h3>-->
-<!--    <p id="stop/start" style="color: red;"> Both object start spinning! </p>-->
-<!--      <h3> 4. Press S to start/stop the robot spin in a circle! </h3>-->
-<!--      <p id="spin-the-robot" style="color: red;"> The robot are spinning in a circle! </p>-->
-<!--        <h3> 5. Double click to stop/start Top only! </h3>-->
-<!--        <p id="start-top" style="color: red;"> Top is spinning! </p>-->
-<!--    <h3> 6. Click the button below to spin the Top </h3>-->
+    <h2 style="color: darkmagenta"> CS351 Project B: 3D Exploration of the World</h2>
+    <h4 style="color: grey"> Author: Yiwei Zhang MSCS2019. Starter code provided by Professor Jack Thumblin </h4>
+    <h3 style="color: deeppink"> Please don't switch browser while playing this demo. If some parts begin dissembble, please refresh the browser again :-) </h3>
+    <h3> 1. Use keyboard arrow &#8592; &#8594; for strafing</h3>
+    <h3> 2. Use keyboard arrow &#8593; &#8595; for navigating forward and backward</h3>
+    <h3> 3. Use keyboard W A S D for turning the camera around</h3>
+    <h3> 4. Use keyboard H G for lifting up and down</h3>
+    <h3> 5. Use keyboard J K to control the spinning speed of robot</h3>
+    <h3> 6. Use mouse drag to drag the pyramid </h3>
+    <h3> 7. Press P to stop/start both objects! </h3>
+    <p id="stop/start" style="color: red;"> Both object start spinning! </p>
+        <h3> 8. Double click to stop/start Top only! </h3>
+        <p id="start-top" style="color: red;"> Top is spinning! </p>
+    <h3> 9. Click the button below to spin the Top </h3>
       <button type="button" onclick="spinDown()">Spin << </button>
 	  <button type="button" onclick="runStop()">Run/Stop</button>
       <button type="button" onclick="spinUp()">Spin >> </button>
         <p id="current-angle-top"> </p>
 
-    <h3> 7. Click the button below to spin the robot </h3>
+    <h3> 10. Click the button below to spin the robot </h3>
     <button type="button" onclick="spinDown2()">Spin << </button>
     <button type="button" onclick="runStop2()">Run/Stop</button>
     <button type="button" onclick="spinUp2()">Spin >> </button>
         <p id="current-angle-robot"> </p>
 
     <hr> <!-- Draw a horizontal-line separator------------->
-    Try keyboard & mouse click/drag inside the canvas, and:
     <br>
     <span id='KeyDownResult'  > KeyDown:    </span> <!-- myKeyDown() modifies this span object -->
     <br>
@@ -61,7 +60,7 @@
           Note we use these totals to rotate the triangle at upper left.
     -->
     <div id='Mouse' style="color: darkmagenta"> Mouse Drag totals (CVV coords) </div>
-    <button type="button" onClick='clearDrag()'>Clear</button>
+<!--    <button type="button" onClick='clearDrag()'>Clear</button>-->
 	<!--	Load in the JavaScript libraries supplied by our textbook
 			(Matsuda et al., 2013 WebGL Programming Guide) that help us
 			with WebGL programming
@@ -71,7 +70,7 @@
     <div id=QuatValue>  X=0i, Y=0j, Z=0k, W=1.
       <br> length=1.
     </div>
-    <button type="button" onClick="resetQuat()">Reset</button>
+<!--    <button type="button" onClick="resetQuat()">Reset</button>-->
     <script src="../lib/webgl-utils.js"></script>
     <script src="../lib/webgl-debug.js"></script>
     <script src="../lib/cuon-utils.js"></script>
